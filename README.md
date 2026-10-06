@@ -63,7 +63,7 @@ Base: `/api/v1`. Header wajib `Accept: application/json`. Auth: `Authorization: 
 
 Response sukses: `{sukses:true, pesan, data}`. Error konsisten: 401 token, 403 peran, 404 resi, 422 validasi (`galat`).
 
-## Struktur (ikut pola modul 2–5)
+## Struktur
 
 - `database/migrations`: users (+role,phone), services, orders, order_tracks
 - `app/Models`: User (HasApiTokens, orders, orderTracks), Service (orders), Order (customer, service, tracks), OrderTrack (order, updater)
