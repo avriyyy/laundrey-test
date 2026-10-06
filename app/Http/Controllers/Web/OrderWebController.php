@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderTrack;
+use App\Models\Promo;
 use App\Models\Service;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -55,21 +57,28 @@ class OrderWebController extends Controller
             'customer_name' => ['required_without:user_id', 'nullable', 'string', 'max:100'],
             'customer_phone' => ['nullable', 'string', 'max:20'],
             'service_id' => ['required', 'exists:services,id'],
+            'promo_code' => ['nullable', 'string', 'max:20'],
             'weight_or_qty' => ['required', 'numeric', 'min:0.1', 'max:1000'],
             'payment_status' => ['sometimes', 'in:unpaid,paid'],
         ]);
 
         $service = Service::where('tenant_id', auth()->user()->tenant_id)->findOrFail($data['service_id']);
         $customer = $this->resolveCustomer(auth()->user()->tenant_id, $data);
+        $promo = $this->resolvePromo(auth()->user()->tenant_id, $data, (int) $service->id);
 
-        DB::transaction(function () use ($data, $service, $customer, &$invoiceId) {
+        DB::transaction(function () use ($data, $service, $customer, $promo, &$invoiceId) {
+            $gross = (float) $data['weight_or_qty'] * (float) $service->price_per_unit;
+            $discount = $promo ? (float) $promo->percent : 0;
+
             $order = Order::create([
                 'invoice_number' => Order::generateInvoiceNumber(auth()->user()->tenant->prefix, auth()->user()->tenant_id),
                 'tenant_id' => auth()->user()->tenant_id,
                 'user_id' => $customer->id,
                 'service_id' => $data['service_id'],
+                'promo_id' => $promo?->id,
                 'weight_or_qty' => $data['weight_or_qty'],
-                'total_price' => (float) $data['weight_or_qty'] * (float) $service->price_per_unit,
+                'total_price' => $gross * (1 - $discount / 100),
+                'discount_percent' => $discount,
                 'payment_status' => $data['payment_status'] ?? 'unpaid',
                 'current_status' => 'Received',
             ]);
@@ -85,6 +94,19 @@ class OrderWebController extends Controller
         });
 
         return redirect()->route('orders.show', $invoiceId)->with('sukses', 'Order recorded.');
+    }
+
+    private function resolvePromo(int $tenantId, array $data, int $serviceId): ?Promo
+    {
+        if (empty($data['promo_code'])) {
+            return null;
+        }
+
+        $candidate = Promo::where('tenant_id', $tenantId)
+            ->where('code', strtoupper($data['promo_code']))
+            ->first();
+
+        return $candidate && $candidate->isValidFor($serviceId) ? $candidate : null;
     }
 
     private function resolveCustomer(int $tenantId, array $data): User
@@ -116,7 +138,7 @@ class OrderWebController extends Controller
     public function show(int $order): View
     {
         $order = Order::where('tenant_id', auth()->user()->tenant_id)->findOrFail($order);
-        $order->load(['customer', 'service', 'tracks.updater']);
+        $order->load(['customer', 'service', 'promo', 'tracks.updater']);
 
         return view('orders.show', compact('order'));
     }
@@ -165,7 +187,7 @@ class OrderWebController extends Controller
         $order = Order::where('tenant_id', auth()->user()->tenant_id)->findOrFail($order);
         $order->load(['customer', 'service', 'tenant', 'tracks']);
 
-        return \Barryvdh\DomPDF\Facade\Pdf::loadView('orders.invoice', compact('order'))
+        return Pdf::loadView('orders.invoice', compact('order'))
             ->setPaper('a5', 'portrait')
             ->download($order->invoice_number.'.pdf');
     }

@@ -21,7 +21,8 @@ UMKM laundry masih catat manual: pelanggan tanya status berulang, tahapan cucian
 - Kalkulasi harga otomatis (berat × tarif)
 - Alur status: Received → Washing → Drying → Ironing → Ready → Completed
 - Setiap perubahan status tercatat di `order_tracks`
-- Tracking publik via nomor resi, dashboard per peran
+- Relasi Eloquent: One-to-Many (tenant→users/services/orders, user→orders, order→tracks) + Many-to-Many (promo↔service via `promo_service`)
+- Promo diskon: kode + persen + window tanggal, attach ke layanan, order pakai `promo_code` → total terpangkas otomatis
 - Desain referensi Linear.app: minimalis, whitespace lega, border subtle, satu aksen indigo `#5E6AD2`
 
 ## Teknologi
@@ -72,6 +73,10 @@ Base: `/api/v1`. Header wajib `Accept: application/json`. Auth: `Authorization: 
 | PUT | /api/v1/orders/{id} | Update transaksi | Yes | Admin |
 | POST | /api/v1/orders/{id}/tracks | Update status + catat track | Yes | Admin |
 | GET | /api/v1/track/{invoice} | Tracking publik | No | Public |
+| GET | /api/v1/promos | Daftar promo + layanan (cari=`cari`) | Yes | Admin |
+| POST | /api/v1/promos | Buat promo + attach layanan | Yes | Admin |
+| GET | /api/v1/promos/{id} | Detail promo | Yes | Admin |
+| DELETE | /api/v1/promos/{id} | Hapus promo | Yes | Admin |
 
 Customer CRUD + live lookup (`/customers`, `/customers-lookup`) tersedia di web untuk admin.
 

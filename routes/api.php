@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\OrderController;
+use App\Http\Controllers\Api\V1\PromoController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\TrackController;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +31,10 @@ Route::prefix('v1')->group(function () {
             Route::post('/services', [ServiceController::class, 'store']);
             Route::put('/services/{service}', [ServiceController::class, 'update']);
             Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
+            Route::get('/promos', [PromoController::class, 'index']);
+            Route::post('/promos', [PromoController::class, 'store']);
+            Route::get('/promos/{promo}', [PromoController::class, 'show']);
+            Route::delete('/promos/{promo}', [PromoController::class, 'destroy']);
             Route::post('/orders', [OrderController::class, 'store']);
             Route::put('/orders/{order}', [OrderController::class, 'update']);
         });

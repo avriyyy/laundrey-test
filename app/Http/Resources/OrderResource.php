@@ -14,6 +14,14 @@ class OrderResource extends JsonResource
             'invoice_number' => $this->invoice_number,
             'weight_or_qty' => (float) $this->weight_or_qty,
             'total_price' => (float) $this->total_price,
+            'discount_percent' => (float) $this->discount_percent,
+            'promo' => $this->whenLoaded('promo', function () {
+                return $this->promo ? [
+                    'id' => $this->promo->id,
+                    'code' => $this->promo->code,
+                    'percent' => (int) $this->promo->percent,
+                ] : null;
+            }),
             'payment_status' => $this->payment_status,
             'current_status' => $this->current_status,
             'customer' => $this->whenLoaded('customer', function () {

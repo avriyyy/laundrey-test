@@ -18,8 +18,10 @@ class Order extends Model
         'tenant_id',
         'user_id',
         'service_id',
+        'promo_id',
         'weight_or_qty',
         'total_price',
+        'discount_percent',
         'payment_status',
         'current_status',
     ];
@@ -29,6 +31,7 @@ class Order extends Model
         return [
             'weight_or_qty' => 'decimal:2',
             'total_price' => 'decimal:2',
+            'discount_percent' => 'decimal:2',
         ];
     }
 
@@ -40,6 +43,11 @@ class Order extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    public function promo(): BelongsTo
+    {
+        return $this->belongsTo(Promo::class);
     }
 
     public function tracks(): HasMany

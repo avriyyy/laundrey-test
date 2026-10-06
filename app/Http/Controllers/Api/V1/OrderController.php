@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateOrderRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\OrderTrack;
+use App\Models\Promo;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -53,15 +54,21 @@ class OrderController extends Controller
         $data = $request->validated();
         $service = Service::where('tenant_id', $tenantId)->findOrFail($data['service_id']);
         $customer = $this->resolveCustomer($tenantId, $data);
+        $promo = $this->resolvePromo($tenantId, $data, (int) $service->id);
 
-        $order = DB::transaction(function () use ($data, $request, $service, $customer, $tenantId) {
+        $order = DB::transaction(function () use ($data, $request, $service, $customer, $tenantId, $promo) {
+            $gross = (float) $data['weight_or_qty'] * (float) $service->price_per_unit;
+            $discount = $promo ? (float) $promo->percent : 0;
+
             $order = Order::create([
                 'invoice_number' => Order::generateInvoiceNumber($request->user()->tenant->prefix, $tenantId),
                 'tenant_id' => $tenantId,
                 'user_id' => $customer->id,
                 'service_id' => $data['service_id'],
+                'promo_id' => $promo?->id,
                 'weight_or_qty' => $data['weight_or_qty'],
-                'total_price' => (float) $data['weight_or_qty'] * (float) $service->price_per_unit,
+                'total_price' => $gross * (1 - $discount / 100),
+                'discount_percent' => $discount,
                 'payment_status' => $data['payment_status'] ?? 'unpaid',
                 'current_status' => 'Received',
             ]);
@@ -76,13 +83,26 @@ class OrderController extends Controller
             return $order;
         });
 
-        $order->load(['customer', 'service', 'tracks']);
+        $order->load(['customer', 'service', 'promo', 'tracks']);
 
         return response()->json([
             'sukses' => true,
             'pesan' => 'Order berhasil dibuat',
             'data' => new OrderResource($order),
         ], 201);
+    }
+
+    private function resolvePromo(int $tenantId, array $data, int $serviceId): ?Promo
+    {
+        if (empty($data['promo_code'])) {
+            return null;
+        }
+
+        $candidate = Promo::where('tenant_id', $tenantId)
+            ->where('code', strtoupper($data['promo_code']))
+            ->first();
+
+        return $candidate && $candidate->isValidFor($serviceId) ? $candidate : null;
     }
 
     private function resolveCustomer(int $tenantId, array $data): User
@@ -114,7 +134,7 @@ class OrderController extends Controller
     public function show(Request $request, int $order): JsonResponse
     {
         $item = Order::where('tenant_id', $request->user()->tenant_id)->findOrFail($order);
-        $item->load(['customer', 'service', 'tracks.updater']);
+        $item->load(['customer', 'service', 'promo', 'tracks.updater']);
 
         return response()->json([
             'sukses' => true,
@@ -137,7 +157,7 @@ class OrderController extends Controller
         }
 
         $item->update($data);
-        $item->load(['customer', 'service', 'tracks']);
+        $item->load(['customer', 'service', 'promo', 'tracks']);
 
         return response()->json([
             'sukses' => true,

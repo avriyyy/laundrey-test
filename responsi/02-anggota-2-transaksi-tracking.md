@@ -447,6 +447,245 @@ class TrackController extends Controller
 **Cek manual:** order user terdaftar + walk-in + HP ganda (user sama) → 201; filter `?status=&payment_status=` + pagination; tracking publik 200/404; ID tenant lain 404.
 **Commit:** `feat: API order CRUD + tracking` → push, kabari Anggota 3.
 
+## Langkah 5 — Promo diskon (relasi Many-to-Many kedua)
+
+**Kenapa di bagianmu:** promo menempel ke kalkulasi harga order + tabel pivot `promo_service` adalah relasi Many-to-Many yang disyaratkan ketentuan (satu promo ↔ banyak layanan).
+
+```bash
+php artisan make:migration create_promos_table --no-interaction
+php artisan make:migration add_promo_to_orders_table --no-interaction
+php artisan make:model Promo --no-interaction
+```
+
+**Migration 1** — tabel `promos` (`tenant_id` FK cascade, `code` 20, `name`, `percent` tinyint, `active` default true, `starts_at`/`ends_at` date nullable, unique `[tenant_id, code]`) + pivot `promo_service` (`promo_id`/`service_id` cascade, unique pair).
+
+**Migration 2** — `orders`: `promo_id` nullable FK nullOnDelete + `discount_percent` decimal default 0.
+
+**Model `Promo`:** fillable + casts; `services(): BelongsToMany(Service::class, 'promo_service')`; `orders(): HasMany`; `tenant(): BelongsTo`; method `isValidFor($serviceId)`: aktif + dalam window tanggal + ter-attach ke layanan itu. **Model `Service`:** tambah `promos(): BelongsToMany`. **Model `Order`:** fillable + `promo()` BelongsTo.
+
+**API `PromoController` (CRUD milik bagian ini):** index scope + cari + paginasi; store (kode unik per tenant, sync `service_ids` scope tenant) 201; show; destroy.
+
+**Order pakai promo:** `StoreOrderRequest` + `promo_code` nullable; `resolvePromo()` (cari by code uppercase se-tenant → `isValidFor`, kode salah/expired = harga normal); total = `berat × tarif × (1 - persen/100)`; simpan `promo_id` + snapshot persen. `OrderResource`: tambah `discount_percent` + nested `promo`.
+
+**Route API** (grup `role:admin`): `GET/POST /promos`, `GET /promos/{id}`, `DELETE /promos/{id}`.
+
+Halaman `promos/index` (form + tabel) dan field kode promo di form order = kerja Anggota 3, tapi logikanya milikmu — koordinasikan nama field (`promo_code`, `service_ids`).
+
+### Kode lengkap promo (salin per path)
+
+**`database/migrations/*_create_promos_table.php`:**
+
+```php
+public function up(): void
+{
+    Schema::create('promos', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
+        $table->string('code', 20);
+        $table->string('name', 100);
+        $table->unsignedTinyInteger('percent');
+        $table->boolean('active')->default(true);
+        $table->date('starts_at')->nullable();
+        $table->date('ends_at')->nullable();
+        $table->timestamps();
+
+        $table->unique(['tenant_id', 'code']);
+    });
+
+    Schema::create('promo_service', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('promo_id')->constrained('promos')->cascadeOnDelete();
+        $table->foreignId('service_id')->constrained('services')->cascadeOnDelete();
+        $table->timestamps();
+
+        $table->unique(['promo_id', 'service_id']);
+    });
+}
+
+public function down(): void
+{
+    Schema::dropIfExists('promo_service');
+    Schema::dropIfExists('promos');
+}
+```
+
+**`database/migrations/*_add_promo_to_orders_table.php`:**
+
+```php
+public function up(): void
+{
+    Schema::table('orders', function (Blueprint $table) {
+        $table->foreignId('promo_id')->nullable()->after('service_id')->constrained('promos')->nullOnDelete();
+        $table->decimal('discount_percent', 5, 2)->default(0)->after('total_price');
+    });
+}
+```
+
+**`app/Models/Promo.php` (lengkap):**
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Promo extends Model
+{
+    use HasFactory;
+
+    protected $fillable = ['tenant_id', 'code', 'name', 'percent', 'active', 'starts_at', 'ends_at'];
+
+    protected function casts(): array
+    {
+        return ['percent' => 'integer', 'active' => 'boolean', 'starts_at' => 'date', 'ends_at' => 'date'];
+    }
+
+    public function services(): BelongsToMany
+    {
+        return $this->belongsToMany(Service::class, 'promo_service')->withTimestamps();
+    }
+
+    public function orders(): HasMany { return $this->hasMany(Order::class); }
+    public function tenant(): BelongsTo { return $this->belongsTo(Tenant::class); }
+
+    public function isValidFor(int $serviceId): bool
+    {
+        if (! $this->active) {
+            return false;
+        }
+
+        $today = today();
+
+        if ($this->starts_at && $today->lt($this->starts_at)) {
+            return false;
+        }
+
+        if ($this->ends_at && $today->gt($this->ends_at)) {
+            return false;
+        }
+
+        return $this->services()->where('services.id', $serviceId)->exists();
+    }
+}
+```
+
+**Tambahan `app/Models/Service.php`:** import `BelongsToMany`, tambah:
+
+```php
+public function promos(): BelongsToMany
+{
+    return $this->belongsToMany(Promo::class, 'promo_service')->withTimestamps();
+}
+```
+
+**Tambahan `app/Models/Order.php`:** fillable + `'promo_id'`, `'discount_percent'`; casts + `'discount_percent' => 'decimal:2'`; relasi:
+
+```php
+public function promo(): BelongsTo { return $this->belongsTo(Promo::class); }
+```
+
+**`app/Http/Controllers/Api/V1/PromoController.php` (lengkap):**
+
+```php
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StorePromoRequest;
+use App\Http\Resources\PromoResource;
+use App\Models\Promo;
+use App\Models\Service;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class PromoController extends Controller
+{
+    public function index(Request $request)
+    {
+        $kueri = Promo::query()->with('services')->where('tenant_id', $request->user()->tenant_id);
+
+        if ($request->filled('cari')) {
+            $kueri->where(fn ($sub) => $sub->where('code', 'like', '%'.$request->query('cari').'%')
+                ->orWhere('name', 'like', '%'.$request->query('cari').'%'));
+        }
+
+        return PromoResource::collection($kueri->orderBy('code')->paginate(min($request->integer('per_halaman', 10), 100)));
+    }
+
+    public function store(StorePromoRequest $request): JsonResponse
+    {
+        $tenantId = $request->user()->tenant_id;
+        $data = $request->validated();
+
+        if (Promo::where('tenant_id', $tenantId)->where('code', $data['code'])->exists()) {
+            return response()->json(['sukses' => false, 'pesan' => 'Promo code already used'], 422);
+        }
+
+        $serviceIds = Service::where('tenant_id', $tenantId)->whereIn('id', $data['service_ids'] ?? [])->pluck('id');
+        $promo = Promo::create($data + ['tenant_id' => $tenantId]);
+        $promo->services()->sync($serviceIds);
+        $promo->load('services');
+
+        return response()->json(['sukses' => true, 'pesan' => 'Promo berhasil dibuat', 'data' => new PromoResource($promo)], 201);
+    }
+
+    public function show(Request $request, int $promo): JsonResponse
+    {
+        $item = Promo::where('tenant_id', $request->user()->tenant_id)->with('services')->findOrFail($promo);
+
+        return response()->json(['sukses' => true, 'data' => new PromoResource($item)]);
+    }
+
+    public function destroy(Request $request, int $promo): JsonResponse
+    {
+        Promo::where('tenant_id', $request->user()->tenant_id)->findOrFail($promo)->delete();
+
+        return response()->json(['sukses' => true, 'pesan' => 'Promo berhasil dihapus']);
+    }
+}
+```
+
+**`StorePromoRequest`:** `prepareForValidation` uppercase code; rules: code required max 20, name, percent int 1–100, active sometimes boolean, dates nullable + ends after starts, `service_ids` array + exists.
+
+**`PromoResource`:** id, code, name, percent int, active bool, dates, `services` (collection, whenLoaded).
+
+**Patch `OrderController@store`:** tambah `use App\Models\Promo;`, resolve service+customer seperti biasa lalu:
+
+```php
+$promo = null;
+
+if (! empty($data['promo_code'])) {
+    $candidate = Promo::where('tenant_id', $tenantId)->where('code', strtoupper($data['promo_code']))->first();
+
+    if ($candidate && $candidate->isValidFor((int) $service->id)) {
+        $promo = $candidate;
+    }
+}
+
+$gross = (float) $data['weight_or_qty'] * (float) $service->price_per_unit;
+$discount = $promo ? (float) $promo->percent : 0;
+
+$order = Order::create([
+    // ... field lama
+    'promo_id' => $promo?->id,
+    'total_price' => $gross * (1 - $discount / 100),
+    'discount_percent' => $discount,
+    // ...
+]);
+```
+
+Dan `StoreOrderRequest` tambah `'promo_code' => ['nullable', 'string', 'max:20']`. `OrderResource` tambah `discount_percent` + nested `promo` (whenLoaded).
+
+### View promo → pindah ke dokumen 03 (milik Anggota 3).
+
+
+
 ## Checklist serah terima
 
 - [ ] Walk-in baru vs HP ganda benar, harga = berat × tarif

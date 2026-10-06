@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <a href="{{ route('orders.index') }}" class="rounded-md px-2 py-1.5 font-medium {{ request()->routeIs('orders.*') ? 'bg-paper text-ink' : 'text-ink-2 hover:bg-paper hover:text-ink' }}">Orders</a>
 <a href="{{ route('services.index') }}" class="rounded-md px-2 py-1.5 font-medium {{ request()->routeIs('services.*') ? 'bg-paper text-ink' : 'text-ink-2 hover:bg-paper hover:text-ink' }}">Services & pricing</a>
 <a href="{{ route('customers.index') }}" class="rounded-md px-2 py-1.5 font-medium {{ request()->routeIs('customers.*') ? 'bg-paper text-ink' : 'text-ink-2 hover:bg-paper hover:text-ink' }}">Customers</a>
+<a href="{{ route('promos.index') }}" class="rounded-md px-2 py-1.5 font-medium {{ request()->routeIs('promos.*') ? 'bg-paper text-ink' : 'text-ink-2 hover:bg-paper hover:text-ink' }}">Promos</a>
 @endif
 @if(in_array(auth()->user()->role, ['admin']))
 <a href="{{ route('operations.index') }}" class="rounded-md px-2 py-1.5 font-medium {{ request()->routeIs('operations.*') ? 'bg-paper text-ink' : 'text-ink-2 hover:bg-paper hover:text-ink' }}">Operations</a>
@@ -123,6 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <a href="{{ route('orders.index') }}" class="whitespace-nowrap px-2 py-1">Orders</a>
 <a href="{{ route('services.index') }}" class="whitespace-nowrap px-2 py-1">Services</a>
 <a href="{{ route('customers.index') }}" class="whitespace-nowrap px-2 py-1">Customers</a>
+<a href="{{ route('promos.index') }}" class="whitespace-nowrap px-2 py-1">Promos</a>
 @endif
 @if(in_array(auth()->user()->role, ['admin']))
 <a href="{{ route('operations.index') }}" class="whitespace-nowrap px-2 py-1">Operations</a>
