@@ -1,58 +1,79 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laundrey
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem pelacakan status cucian & layanan laundry untuk UMKM. Pelanggan lacak resi mandiri, admin kelola transaksi, tarif, dan tahap pengerjaan.
 
-## About Laravel
+## Permasalahan
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+UMKM laundry masih catat manual: pelanggan tanya status berulang, tahapan cucian sulit dilacak, nota hilang dan salah hitung.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Solusi
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Dua peran: admin/admin dan pelanggan
+- Kalkulasi harga otomatis (berat × tarif)
+- Alur status: Received → Washing → Drying → Ironing → Ready → Completed
+- Setiap perubahan status tercatat di `order_tracks`
+- Tracking publik via nomor resi, dashboard per peran
+- Desain referensi Linear.app: minimalis, whitespace lega, border subtle, satu aksen indigo `#5E6AD2`
 
-## Learning Laravel
+## Teknologi
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Laravel 13, PHP ≥ 8.4, MySQL/MariaDB (dev default SQLite), Eloquent ORM, Sanctum Bearer Token, Blade, Vite.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Cara menjalankan
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
+# MySQL: sesuaikan DB_* di .env. SQLite: biarkan default.
+php artisan migrate --seed
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Buka `http://localhost:8000`.
 
-## Contributing
+## Akun pengujian
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Role | Email | Password |
+| ---- | ----- | -------- |
+| Kasir | admin@laundrey.test | password123 |
+| Pelanggan | budi@laundrey.test | password123 |
 
-## Code of Conduct
+Contoh resi: `INV-20261006-001` (lihat `orders` setelah seed).
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## API Documentation
 
-## Security Vulnerabilities
+Base: `/api/v1`. Header wajib `Accept: application/json`. Auth: `Authorization: Bearer <token>`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| Method | Endpoint | Keterangan | Auth | Role |
+| ------ | -------- | ---------- | ---- | ---- |
+| POST | /api/v1/auth/register | Registrasi pelanggan | No | Public |
+| POST | /api/v1/auth/login | Login & token | No | Public |
+| POST | /api/v1/auth/logout | Logout (hapus token aktif) | Yes | All |
+| GET | /api/v1/services | Daftar layanan (cari=`cari`, paginasi `per_halaman`) | Yes | All |
+| POST | /api/v1/services | Tambah layanan | Yes | Kasir/Admin |
+| PUT | /api/v1/services/{id} | Update layanan | Yes | Kasir/Admin |
+| DELETE | /api/v1/services/{id} | Hapus layanan | Yes | Kasir/Admin |
+| GET | /api/v1/orders | Daftar transaksi (filter `cari`, `status`, `payment_status`, `per_halaman`) | Yes | All (pelanggan hanya miliknya) |
+| POST | /api/v1/orders | Buat transaksi (user_id terdaftar ATAU customer_name/phone walk-in) + invoice + track awal | Yes | Admin |
+| GET | /api/v1/orders/{id} | Detail + tracks | Yes | All (miliknya / staf) |
+| PUT | /api/v1/orders/{id} | Update transaksi | Yes | Kasir/Admin |
+| POST | /api/v1/orders/{id}/tracks | Update status + catat track | Yes | Kasir/Admin |
+| GET | /api/v1/track/{invoice} | Tracking publik | No | Public |
 
-## License
+Response sukses: `{sukses:true, pesan, data}`. Error konsisten: 401 token, 403 peran, 404 resi, 422 validasi (`galat`).
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Struktur (ikut pola modul 2–5)
+
+- `database/migrations`: users (+role,phone), services, orders, order_tracks
+- `app/Models`: User (HasApiTokens, orders, orderTracks), Service (orders), Order (customer, service, tracks), OrderTrack (order, updater)
+- `app/Http/Requests`: Register, Login, Store/Update Service, Store/Update Order, StoreTrack
+- `app/Http/Resources`: Service, Order (nested customer/service/tracks), OrderTrack
+- `app/Http/Controllers/Api/V1`: Auth, Service, Order, Track
+- `app/Http/Middleware/EnsureRole.php` → alias `role`
+- `app/Http/Controllers/Web`: Auth (session), Dashboard, Order, Service, Operation, Track
+- `resources/views`: layouts/app, tracking, auth, dashboard, orders, services, operations
+
+## Deployment
+
+Set `APP_URL`, `DB_*` MySQL, `php artisan migrate --force`, `npm run build`. Link deployment: (isi setelah deploy).

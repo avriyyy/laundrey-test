@@ -1,9 +1,99 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+    --color-paper: #f6f5f2;
+    --color-ink: #1c1917;
+    --color-ink-2: #57534e;
+    --color-muted: #a8a29e;
+    --color-line: #e6e3dc;
+    --color-line-strong: #d6d3cb;
+    --color-primary: #5e6ad2;
+    --color-primary-hover: #4f5bc5;
+}
+
+html {
+    color-scheme: light;
+}
+
+html.dark {
+    color-scheme: dark;
+}
+
+html.dark body {
+    background-color: #1c1917;
+    color: #f2efe9;
+}
+
+html.dark .bg-paper {
+    background-color: #1c1917;
+}
+
+html.dark .bg-paper\/95 {
+    background-color: rgb(28 25 23 / 0.95);
+}
+
+html.dark .bg-white {
+    background-color: #25211e;
+}
+
+html.dark .text-ink {
+    color: #f2efe9;
+}
+
+html.dark .text-ink-2 {
+    color: #c9c3b8;
+}
+
+html.dark .text-muted {
+    color: #8d877b;
+}
+
+html.dark .border-line {
+    border-color: #3b352f;
+}
+
+html.dark .border-line-strong {
+    border-color: #575046;
+}
+
+html.dark .border-ink {
+    border-color: #e8e4da;
+}
+
+html.dark .bg-line {
+    background-color: #3b352f;
+}
+
+html.dark .bg-ink {
+    background-color: #e8e4da;
+}
+
+html.dark .bg-ink.text-white,
+html.dark .text-white {
+    color: #1c1917;
+}
+
+html.dark .hover\:bg-paper:hover {
+    background-color: #38322c;
+}
+
+html.dark .hover\:bg-black:hover {
+    background-color: #fff;
+}
+
+html.dark .hover\:text-white:hover {
+    color: #1c1917;
+}
+
+html.dark .hover\:text-ink:hover {
+    color: #f2efe9;
 }

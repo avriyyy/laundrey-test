@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Order extends Model
+{
+    use HasFactory;
+
+    public const STATUSES = ['Received', 'Washing', 'Drying', 'Ironing', 'Ready', 'Completed'];
+
+    protected $fillable = [
+        'invoice_number',
+        'user_id',
+        'service_id',
+        'weight_or_qty',
+        'total_price',
+        'payment_status',
+        'current_status',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'weight_or_qty' => 'decimal:2',
+            'total_price' => 'decimal:2',
+        ];
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class);
+    }
+
+    public function tracks(): HasMany
+    {
+        return $this->hasMany(OrderTrack::class)->orderBy('created_at');
+    }
+
+    public static function generateInvoiceNumber(): string
+    {
+        $urutan = Order::whereDate('created_at', today())->count() + 1;
+
+        return 'INV-'.now()->format('Ymd').'-'.str_pad((string) $urutan, 3, '0', STR_PAD_LEFT);
+    }
+}
