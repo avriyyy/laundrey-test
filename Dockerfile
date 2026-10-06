@@ -23,9 +23,9 @@ RUN npm run build && rm -rf node_modules
 FROM php:8.3-apache
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git unzip libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libonig-dev \
+    git unzip libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libonig-dev libpq-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) pdo pdo_mysql mbstring zip gd bcmath \
+    && docker-php-ext-install -j$(nproc) pdo pdo_mysql pdo_pgsql mbstring zip gd bcmath \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
