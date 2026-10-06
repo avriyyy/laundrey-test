@@ -16,6 +16,7 @@ class SettingWebController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
+            'owner_name' => ['required', 'string', 'max:100'],
             'prefix' => ['required', 'string', 'size:3', 'regex:/^[A-Z]+$/', 'unique:tenants,prefix,'.auth()->user()->tenant_id],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
@@ -24,7 +25,14 @@ class SettingWebController extends Controller
             'prefix.unique' => 'Prefix already taken by another laundry',
         ]);
 
-        auth()->user()->tenant->update($data);
+        auth()->user()->tenant->update([
+            'name' => $data['name'],
+            'prefix' => $data['prefix'],
+            'phone' => $data['phone'] ?? null,
+            'address' => $data['address'] ?? null,
+        ]);
+
+        auth()->user()->update(['name' => $data['owner_name']]);
 
         return back()->with('sukses', 'Settings saved. New receipts use the new prefix.');
     }

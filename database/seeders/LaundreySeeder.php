@@ -89,7 +89,7 @@ class LaundreySeeder extends Seeder
             ['email' => 'klin@laundrey.test'],
             [
                 'tenant_id' => $tenant->id,
-                'name' => 'Admin Klin',
+                'name' => 'Bu Klin',
                 'password' => Hash::make('password123'),
                 'role' => 'admin',
                 'phone' => '084444444444',
