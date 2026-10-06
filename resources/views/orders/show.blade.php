@@ -10,6 +10,9 @@
 </div>
 <div class="flex flex-col items-end gap-1.5"><x-status-badge :status="$order->current_status" /><x-payment-badge :status="$order->payment_status" /></div>
 </div>
+<div class="mt-4 flex flex-wrap justify-end gap-2">
+<a href="{{ route('orders.invoice', $order) }}" class="h-9 rounded-md bg-ink px-4 text-[13px] font-semibold leading-8 text-white hover:bg-black">Print invoice</a>
+</div>
 
 <div class="mt-6 grid grid-cols-3 border-y border-ink py-1">
 <div class="px-1 py-3"><p class="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Total</p><p class="mt-0.5 font-mono text-xl font-bold tabular-nums">Rp{{ number_format($order->total_price, 0, ',', '.') }}</p></div>

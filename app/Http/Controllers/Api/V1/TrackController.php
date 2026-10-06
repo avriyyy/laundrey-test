@@ -32,6 +32,13 @@ class TrackController extends Controller
 
     public function store(StoreTrackRequest $request, Order $order): JsonResponse
     {
+        if ($order->tenant_id !== $request->user()->tenant_id) {
+            return response()->json([
+                'sukses' => false,
+                'pesan' => 'Sumber daya tidak ditemukan',
+            ], 404);
+        }
+
         $data = $request->validated();
 
         if ($order->current_status === 'Completed') {

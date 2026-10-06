@@ -3,9 +3,14 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RegisterRequest;
+use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class AuthWebController extends Controller
@@ -26,7 +31,7 @@ class AuthWebController extends Controller
             return back()->withErrors(['email' => 'These credentials do not match our records'])->onlyInput('email');
         }
 
-        if (Auth::user()->role !== 'admin') {
+        if (! in_array(Auth::user()->role, ['admin', 'superadmin'], true)) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -36,7 +41,40 @@ class AuthWebController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'))->with('sukses', 'Signed in. Welcome back.');
+        $target = Auth::user()->role === 'superadmin' ? route('admin.dashboard') : route('dashboard');
+
+        return redirect()->intended($target)->with('sukses', 'Signed in. Welcome back.');
+    }
+
+    public function showRegister(): View
+    {
+        return view('auth.register');
+    }
+
+    public function register(RegisterRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+
+        $admin = DB::transaction(function () use ($data) {
+            $tenant = Tenant::create([
+                'name' => $data['laundry_name'],
+                'prefix' => $data['prefix'],
+            ]);
+
+            return User::create([
+                'tenant_id' => $tenant->id,
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'role' => 'admin',
+                'phone' => $data['phone'] ?? null,
+            ]);
+        });
+
+        Auth::login($admin);
+        $request->session()->regenerate();
+
+        return redirect()->route('dashboard')->with('sukses', 'Laundry registered. Welcome.');
     }
 
     public function logout(Request $request): RedirectResponse

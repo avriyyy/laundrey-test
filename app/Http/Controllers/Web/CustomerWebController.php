@@ -15,7 +15,7 @@ class CustomerWebController extends Controller
 {
     public function index(Request $request): View
     {
-        $kueri = User::query()->where('role', 'pelanggan')->withCount('orders')->withSum('orders as spent_sum', 'total_price');
+        $kueri = User::query()->where('tenant_id', auth()->user()->tenant_id)->where('role', 'pelanggan')->withCount('orders')->withSum('orders as spent_sum', 'total_price');
 
         if ($request->filled('cari')) {
             $kataKunci = $request->query('cari');
@@ -39,7 +39,7 @@ class CustomerWebController extends Controller
             return response()->json(['data' => []]);
         }
 
-        $rows = User::where('role', 'pelanggan')
+        $rows = User::where('tenant_id', auth()->user()->tenant_id)->where('role', 'pelanggan')
             ->where(function ($sub) use ($kataKunci) {
                 $sub->where('name', 'like', '%'.$kataKunci.'%')
                     ->orWhere('phone', 'like', '%'.$kataKunci.'%');
@@ -75,6 +75,7 @@ class CustomerWebController extends Controller
         ]);
 
         User::create([
+            'tenant_id' => auth()->user()->tenant_id,
             'name' => $data['name'],
             'phone' => $data['phone'] ?? null,
             'email' => $data['email'] ?? 'walkin-'.now()->format('YmdHis').'-'.str()->random(6).'@laundrey.local',
@@ -85,8 +86,9 @@ class CustomerWebController extends Controller
         return redirect()->route('customers.index')->with('sukses', 'Customer recorded.');
     }
 
-    public function show(User $customer): View
+    public function show(int $customer): View
     {
+        $customer = User::where('tenant_id', auth()->user()->tenant_id)->findOrFail($customer);
         abort_unless($customer->role === 'pelanggan', 404);
 
         $orders = Order::with('service')->where('user_id', $customer->id)->orderBy('created_at', 'desc')->paginate(10);
@@ -96,15 +98,17 @@ class CustomerWebController extends Controller
         return view('customers.show', compact('customer', 'orders', 'spent', 'unpaid'));
     }
 
-    public function edit(User $customer): View
+    public function edit(int $customer): View
     {
+        $customer = User::where('tenant_id', auth()->user()->tenant_id)->findOrFail($customer);
         abort_unless($customer->role === 'pelanggan', 404);
 
         return view('customers.edit', compact('customer'));
     }
 
-    public function update(Request $request, User $customer): RedirectResponse
+    public function update(Request $request, int $customer): RedirectResponse
     {
+        $customer = User::where('tenant_id', auth()->user()->tenant_id)->findOrFail($customer);
         abort_unless($customer->role === 'pelanggan', 404);
 
         $data = $request->validate([
@@ -118,8 +122,9 @@ class CustomerWebController extends Controller
         return redirect()->route('customers.show', $customer)->with('sukses', 'Customer updated.');
     }
 
-    public function destroy(User $customer): RedirectResponse
+    public function destroy(int $customer): RedirectResponse
     {
+        $customer = User::where('tenant_id', auth()->user()->tenant_id)->findOrFail($customer);
         abort_unless($customer->role === 'pelanggan', 404);
 
         if ($customer->orders()->exists()) {

@@ -12,7 +12,8 @@ class ServiceWebController extends Controller
 {
     public function index(): View
     {
-        $services = Service::withCount('orders')->orderBy('service_name')->paginate(10);
+        $services = Service::where('tenant_id', auth()->user()->tenant_id)
+            ->withCount('orders')->orderBy('service_name')->paginate(10);
 
         return view('services.index', compact('services'));
     }
@@ -26,13 +27,15 @@ class ServiceWebController extends Controller
             'estimated_hours' => ['required', 'integer', 'min:1', 'max:720'],
         ]);
 
-        Service::create($data);
+        Service::create($data + ['tenant_id' => auth()->user()->tenant_id]);
 
         return back()->with('sukses', 'Service added.');
     }
 
-    public function update(Request $request, Service $service): RedirectResponse
+    public function update(Request $request, int $service): RedirectResponse
     {
+        $item = Service::where('tenant_id', auth()->user()->tenant_id)->findOrFail($service);
+
         $data = $request->validate([
             'service_name' => ['sometimes', 'string', 'max:100'],
             'price_per_unit' => ['sometimes', 'numeric', 'min:0'],
@@ -40,18 +43,20 @@ class ServiceWebController extends Controller
             'estimated_hours' => ['sometimes', 'integer', 'min:1', 'max:720'],
         ]);
 
-        $service->update($data);
+        $item->update($data);
 
         return back()->with('sukses', 'Service updated.');
     }
 
-    public function destroy(Service $service): RedirectResponse
+    public function destroy(int $service): RedirectResponse
     {
-        if ($service->orders()->exists()) {
+        $item = Service::where('tenant_id', auth()->user()->tenant_id)->findOrFail($service);
+
+        if ($item->orders()->exists()) {
             return back()->withErrors(['service' => 'Service is used by orders and cannot be deleted']);
         }
 
-        $service->delete();
+        $item->delete();
 
         return back()->with('sukses', 'Service deleted.');
     }
@@ -61,12 +66,12 @@ class ServiceWebController extends Controller
         return redirect()->route('services.index');
     }
 
-    public function show(Service $service): RedirectResponse
+    public function show(int $service): RedirectResponse
     {
         return redirect()->route('services.index');
     }
 
-    public function edit(Service $service): RedirectResponse
+    public function edit(int $service): RedirectResponse
     {
         return redirect()->route('services.index');
     }

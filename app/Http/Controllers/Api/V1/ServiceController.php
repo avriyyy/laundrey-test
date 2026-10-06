@@ -14,7 +14,7 @@ class ServiceController extends Controller
 {
     public function index(Request $request)
     {
-        $kueri = Service::query();
+        $kueri = Service::query()->where('tenant_id', $request->user()->tenant_id);
 
         if ($request->filled('cari')) {
             $kueri->where('service_name', 'like', '%'.$request->query('cari').'%');
@@ -29,7 +29,7 @@ class ServiceController extends Controller
 
     public function store(StoreServiceRequest $request): JsonResponse
     {
-        $service = Service::create($request->validated());
+        $service = Service::create($request->validated() + ['tenant_id' => $request->user()->tenant_id]);
 
         return response()->json([
             'sukses' => true,
@@ -38,35 +38,40 @@ class ServiceController extends Controller
         ], 201);
     }
 
-    public function show(Service $service): JsonResponse
+    public function show(Request $request, int $service): JsonResponse
     {
+        $item = Service::where('tenant_id', $request->user()->tenant_id)->findOrFail($service);
+
         return response()->json([
             'sukses' => true,
-            'data' => new ServiceResource($service),
+            'data' => new ServiceResource($item),
         ]);
     }
 
-    public function update(UpdateServiceRequest $request, Service $service): JsonResponse
+    public function update(UpdateServiceRequest $request, int $service): JsonResponse
     {
-        $service->update($request->validated());
+        $item = Service::where('tenant_id', $request->user()->tenant_id)->findOrFail($service);
+        $item->update($request->validated());
 
         return response()->json([
             'sukses' => true,
             'pesan' => 'Layanan berhasil diperbarui',
-            'data' => new ServiceResource($service),
+            'data' => new ServiceResource($item),
         ]);
     }
 
-    public function destroy(Service $service): JsonResponse
+    public function destroy(Request $request, int $service): JsonResponse
     {
-        if ($service->orders()->exists()) {
+        $item = Service::where('tenant_id', $request->user()->tenant_id)->findOrFail($service);
+
+        if ($item->orders()->exists()) {
             return response()->json([
                 'sukses' => false,
                 'pesan' => 'Layanan dipakai transaksi, tidak bisa dihapus',
             ], 422);
         }
 
-        $service->delete();
+        $item->delete();
 
         return response()->json([
             'sukses' => true,

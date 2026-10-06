@@ -1,6 +1,13 @@
 # Laundrey
 
-Sistem pelacakan status cucian & layanan laundry untuk UMKM. Pelanggan lacak resi mandiri, admin kelola transaksi, tarif, dan tahap pengerjaan.
+Multi-tenant laundry ops: tiap kedai daftar dengan kode resi 3 huruf sendiri (misal `QWP`), data terisolasi per tenant. Pelanggan lacak resi publik, admin kelola transaksi, tarif, file pelanggan, dan tahap pengerjaan.
+
+## Cara kerja multi-tenant
+
+- Registrasi (`/register` atau `POST /api/v1/auth/register`): nama laundry + prefix 3 huruf kapital (unik global) + akun admin. Contoh resi: `QWP-20261006-001`.
+- Semua data (services, orders, customers) terfilter `tenant_id`. Cross-tenant return 404.
+- Prefix bisa diganti di Settings, hanya berlaku untuk resi baru.
+- Tracking publik by nomor resi penuh (unik global).
 
 ## Permasalahan
 
@@ -38,9 +45,11 @@ Buka `http://localhost:8000`.
 
 | Role | Email | Password |
 | ---- | ----- | -------- |
-| Admin | admin@laundrey.test | password123 |
+| Admin demo | admin@laundrey.test via `/login` (tenant Laundrey, prefix INV) | password123 |
+| Admin demo 2 | klin@laundrey.test via `/login` (tenant Klin Laundry, prefix KLN) | password123 |
+| Platform | super@laundrey.test via `/login` (monitor + hapus tenant di `/tenants`) | password123 |
 
-Login pelanggan dinonaktifkan: file pelanggan dikelola counter. Data contoh `budi@laundrey.test` tetap ada sebagai file pelanggan.
+Daftar laundry baru via `/register`. Login pelanggan dinonaktifkan: file pelanggan dikelola counter. Data contoh `budi@laundrey.test` tetap ada sebagai file pelanggan.
 
 Contoh resi: `INV-20261006-001` (lihat `orders` setelah seed).
 
@@ -50,6 +59,7 @@ Base: `/api/v1`. Header wajib `Accept: application/json`. Auth: `Authorization: 
 
 | Method | Endpoint | Keterangan | Auth | Role |
 | ------ | -------- | ---------- | ---- | ---- |
+| POST | /api/v1/auth/register | Registrasi laundry (name+prefix+admin) | No | Public |
 | POST | /api/v1/auth/login | Login & token (admin only) | No | Public |
 | POST | /api/v1/auth/logout | Logout (hapus token aktif) | Yes | Admin |
 | GET | /api/v1/services | Daftar layanan (cari=`cari`, paginasi `per_halaman`) | Yes | Admin |
@@ -69,7 +79,8 @@ Response sukses: `{sukses:true, pesan, data}`. Error konsisten: 401 token, 403 p
 
 ## Struktur
 
-- `database/migrations`: users (+role,phone), services, orders, order_tracks
+- `database/migrations`: tenants, users/services/orders (+tenant_id), order_tracks
+- `app/Models`: Tenant, User (tenant), Service (tenant), Order (tenant, prefix invoice), OrderTrack
 - `app/Models`: User (HasApiTokens, orders, orderTracks), Service (orders), Order (customer, service, tracks), OrderTrack (order, updater)
 - `app/Http/Requests`: Login, Store/Update Service, Store/Update Order, StoreTrack
 - `app/Http/Resources`: Service, Order (nested customer/service/tracks), OrderTrack

@@ -17,7 +17,8 @@ class OrderWebController extends Controller
 {
     public function index(Request $request): View
     {
-        $kueri = Order::query()->with(['customer', 'service']);
+        $kueri = Order::query()->with(['customer', 'service'])
+            ->where('tenant_id', auth()->user()->tenant_id);
 
         if ($request->filled('cari')) {
             $kataKunci = $request->query('cari');
@@ -40,8 +41,9 @@ class OrderWebController extends Controller
 
     public function create(): View
     {
-        $services = Service::orderBy('service_name')->get();
-        $customers = User::where('role', 'pelanggan')->orderBy('name')->get();
+        $tenantId = auth()->user()->tenant_id;
+        $services = Service::where('tenant_id', $tenantId)->orderBy('service_name')->get();
+        $customers = User::where('tenant_id', $tenantId)->where('role', 'pelanggan')->orderBy('name')->get();
 
         return view('orders.create', compact('services', 'customers'));
     }
@@ -57,12 +59,13 @@ class OrderWebController extends Controller
             'payment_status' => ['sometimes', 'in:unpaid,paid'],
         ]);
 
-        $service = Service::findOrFail($data['service_id']);
-        $customer = $this->resolveCustomer($data);
+        $service = Service::where('tenant_id', auth()->user()->tenant_id)->findOrFail($data['service_id']);
+        $customer = $this->resolveCustomer(auth()->user()->tenant_id, $data);
 
-        DB::transaction(function () use ($data, $service, $customer) {
+        DB::transaction(function () use ($data, $service, $customer, &$invoiceId) {
             $order = Order::create([
-                'invoice_number' => Order::generateInvoiceNumber(),
+                'invoice_number' => Order::generateInvoiceNumber(auth()->user()->tenant->prefix, auth()->user()->tenant_id),
+                'tenant_id' => auth()->user()->tenant_id,
                 'user_id' => $customer->id,
                 'service_id' => $data['service_id'],
                 'weight_or_qty' => $data['weight_or_qty'],
@@ -77,21 +80,23 @@ class OrderWebController extends Controller
                 'status' => 'Received',
                 'notes' => 'Order received at counter',
             ]);
+
+            $invoiceId = $order->id;
         });
 
-        return redirect()->route('orders.index')->with('sukses', 'Order recorded.');
+        return redirect()->route('orders.show', $invoiceId)->with('sukses', 'Order recorded.');
     }
 
-    private function resolveCustomer(array $data): User
+    private function resolveCustomer(int $tenantId, array $data): User
     {
         if (! empty($data['user_id'])) {
-            return User::findOrFail($data['user_id']);
+            return User::where('tenant_id', $tenantId)->where('role', 'pelanggan')->findOrFail($data['user_id']);
         }
 
         $phone = $data['customer_phone'] ?? null;
 
         if ($phone) {
-            $existing = User::where('role', 'pelanggan')->where('phone', $phone)->first();
+            $existing = User::where('tenant_id', $tenantId)->where('role', 'pelanggan')->where('phone', $phone)->first();
 
             if ($existing !== null) {
                 return $existing;
@@ -99,6 +104,7 @@ class OrderWebController extends Controller
         }
 
         return User::create([
+            'tenant_id' => $tenantId,
             'name' => $data['customer_name'],
             'email' => 'walkin-'.now()->format('YmdHis').'-'.str()->random(6).'@laundrey.local',
             'password' => Hash::make(str()->random(32)),
@@ -107,15 +113,18 @@ class OrderWebController extends Controller
         ]);
     }
 
-    public function show(Order $order): View
+    public function show(int $order): View
     {
+        $order = Order::where('tenant_id', auth()->user()->tenant_id)->findOrFail($order);
         $order->load(['customer', 'service', 'tracks.updater']);
 
         return view('orders.show', compact('order'));
     }
 
-    public function update(Request $request, Order $order): RedirectResponse
+    public function update(Request $request, int $order): RedirectResponse
     {
+        $order = Order::where('tenant_id', auth()->user()->tenant_id)->findOrFail($order);
+
         $data = $request->validate([
             'payment_status' => ['sometimes', 'in:unpaid,paid'],
             'weight_or_qty' => ['sometimes', 'numeric', 'min:0.1'],
@@ -130,15 +139,34 @@ class OrderWebController extends Controller
         return back()->with('sukses', 'Order updated.');
     }
 
-    public function edit(Order $order): RedirectResponse
+    public function edit(int $order): RedirectResponse
     {
         return redirect()->route('orders.show', $order);
     }
 
-    public function destroy(Order $order): RedirectResponse
+    public function destroy(int $order): RedirectResponse
     {
+        $order = Order::where('tenant_id', auth()->user()->tenant_id)->findOrFail($order);
         $order->delete();
 
         return redirect()->route('orders.index')->with('sukses', 'Order deleted.');
+    }
+
+    public function invoice(int $order): View
+    {
+        $order = Order::where('tenant_id', auth()->user()->tenant_id)->findOrFail($order);
+        $order->load(['customer', 'service', 'tenant', 'tracks']);
+
+        return view('orders.invoice', compact('order'));
+    }
+
+    public function invoicePdf(int $order)
+    {
+        $order = Order::where('tenant_id', auth()->user()->tenant_id)->findOrFail($order);
+        $order->load(['customer', 'service', 'tenant', 'tracks']);
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('orders.invoice', compact('order'))
+            ->setPaper('a5', 'portrait')
+            ->download($order->invoice_number.'.pdf');
     }
 }

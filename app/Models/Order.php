@@ -15,6 +15,7 @@ class Order extends Model
 
     protected $fillable = [
         'invoice_number',
+        'tenant_id',
         'user_id',
         'service_id',
         'weight_or_qty',
@@ -46,10 +47,20 @@ class Order extends Model
         return $this->hasMany(OrderTrack::class)->orderBy('created_at');
     }
 
-    public static function generateInvoiceNumber(): string
+    public function tenant(): BelongsTo
     {
-        $urutan = Order::whereDate('created_at', today())->count() + 1;
+        return $this->belongsTo(Tenant::class);
+    }
 
-        return 'INV-'.now()->format('Ymd').'-'.str_pad((string) $urutan, 3, '0', STR_PAD_LEFT);
+    public static function generateInvoiceNumber(string $prefix, int $tenantId): string
+    {
+        $urutan = Order::where('tenant_id', $tenantId)->whereDate('created_at', today())->count() + 1;
+
+        do {
+            $invoice = $prefix.'-'.now()->format('Ymd').'-'.str_pad((string) $urutan, 3, '0', STR_PAD_LEFT);
+            $urutan++;
+        } while (Order::where('invoice_number', $invoice)->exists());
+
+        return $invoice;
     }
 }

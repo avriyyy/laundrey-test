@@ -77,17 +77,25 @@ html.dark .bg-ink {
     background-color: #e8e4da;
 }
 
-html.dark .bg-ink.text-white,
+html.dark .bg-ink,
+html.dark .bg-ink *,
 html.dark .text-white {
-    color: #1c1917;
+    color: #1c1917 !important;
 }
 
 html.dark .hover\:bg-paper:hover {
     background-color: #38322c;
 }
 
-html.dark .hover\:bg-black:hover {
-    background-color: #fff;
+html.dark .hover\:bg-black:hover,
+html.dark .hover\:bg-ink:hover {
+    background-color: #ffffff !important;
+    color: #1c1917 !important;
+}
+
+html.dark .hover\:bg-black:hover *,
+html.dark .hover\:bg-ink:hover * {
+    color: #1c1917 !important;
 }
 
 html.dark .hover\:text-white:hover {

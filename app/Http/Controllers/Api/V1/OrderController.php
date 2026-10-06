@@ -19,11 +19,8 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $kueri = Order::query()->with(['customer', 'service']);
-
-        if ($request->user()->role === 'pelanggan') {
-            $kueri->where('user_id', $request->user()->id);
-        }
+        $kueri = Order::query()->with(['customer', 'service'])
+            ->where('tenant_id', $request->user()->tenant_id);
 
         if ($request->filled('cari')) {
             $kataKunci = $request->query('cari');
@@ -52,13 +49,15 @@ class OrderController extends Controller
 
     public function store(StoreOrderRequest $request): JsonResponse
     {
+        $tenantId = $request->user()->tenant_id;
         $data = $request->validated();
-        $service = Service::findOrFail($data['service_id']);
-        $customer = $this->resolveCustomer($data);
+        $service = Service::where('tenant_id', $tenantId)->findOrFail($data['service_id']);
+        $customer = $this->resolveCustomer($tenantId, $data);
 
-        $order = DB::transaction(function () use ($data, $request, $service, $customer) {
+        $order = DB::transaction(function () use ($data, $request, $service, $customer, $tenantId) {
             $order = Order::create([
-                'invoice_number' => Order::generateInvoiceNumber(),
+                'invoice_number' => Order::generateInvoiceNumber($request->user()->tenant->prefix, $tenantId),
+                'tenant_id' => $tenantId,
                 'user_id' => $customer->id,
                 'service_id' => $data['service_id'],
                 'weight_or_qty' => $data['weight_or_qty'],
@@ -86,16 +85,16 @@ class OrderController extends Controller
         ], 201);
     }
 
-    private function resolveCustomer(array $data): User
+    private function resolveCustomer(int $tenantId, array $data): User
     {
         if (! empty($data['user_id'])) {
-            return User::findOrFail($data['user_id']);
+            return User::where('tenant_id', $tenantId)->where('role', 'pelanggan')->findOrFail($data['user_id']);
         }
 
         $phone = $data['customer_phone'] ?? null;
 
         if ($phone) {
-            $existing = User::where('role', 'pelanggan')->where('phone', $phone)->first();
+            $existing = User::where('tenant_id', $tenantId)->where('role', 'pelanggan')->where('phone', $phone)->first();
 
             if ($existing !== null) {
                 return $existing;
@@ -103,6 +102,7 @@ class OrderController extends Controller
         }
 
         return User::create([
+            'tenant_id' => $tenantId,
             'name' => $data['customer_name'],
             'email' => 'walkin-'.now()->format('YmdHis').'-'.str()->random(6).'@laundrey.local',
             'password' => Hash::make(str()->random(32)),
@@ -111,42 +111,38 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show(Request $request, Order $order): JsonResponse
+    public function show(Request $request, int $order): JsonResponse
     {
-        if ($request->user()->role === 'pelanggan' && $order->user_id !== $request->user()->id) {
-            return response()->json([
-                'sukses' => false,
-                'pesan' => 'Akses ditolak untuk peran ini',
-            ], 403);
-        }
-
-        $order->load(['customer', 'service', 'tracks.updater']);
+        $item = Order::where('tenant_id', $request->user()->tenant_id)->findOrFail($order);
+        $item->load(['customer', 'service', 'tracks.updater']);
 
         return response()->json([
             'sukses' => true,
-            'data' => new OrderResource($order),
+            'data' => new OrderResource($item),
         ]);
     }
 
-    public function update(UpdateOrderRequest $request, Order $order): JsonResponse
+    public function update(UpdateOrderRequest $request, int $order): JsonResponse
     {
+        $tenantId = $request->user()->tenant_id;
+        $item = Order::where('tenant_id', $tenantId)->findOrFail($order);
         $data = $request->validated();
 
         if (isset($data['service_id']) || isset($data['weight_or_qty'])) {
-            $serviceId = $data['service_id'] ?? $order->service_id;
-            $weight = (float) ($data['weight_or_qty'] ?? $order->weight_or_qty);
-            $service = Service::findOrFail($serviceId);
+            $serviceId = $data['service_id'] ?? $item->service_id;
+            $weight = (float) ($data['weight_or_qty'] ?? $item->weight_or_qty);
+            $service = Service::where('tenant_id', $tenantId)->findOrFail($serviceId);
             $data['service_id'] = $serviceId;
             $data['total_price'] = $weight * (float) $service->price_per_unit;
         }
 
-        $order->update($data);
-        $order->load(['customer', 'service', 'tracks']);
+        $item->update($data);
+        $item->load(['customer', 'service', 'tracks']);
 
         return response()->json([
             'sukses' => true,
             'pesan' => 'Order berhasil diperbarui',
-            'data' => new OrderResource($order),
+            'data' => new OrderResource($item),
         ]);
     }
 }

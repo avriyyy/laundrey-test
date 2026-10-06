@@ -50,5 +50,9 @@ return Application::configure(basePath: dirname(__DIR__))
                     'pesan' => 'Token tidak valid atau belum dikirim',
                 ], 401);
             }
+
+            if (! $request->expectsJson()) {
+                return redirect()->guest(route('login'));
+            }
         });
     })->create();

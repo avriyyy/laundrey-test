@@ -18,7 +18,7 @@
 <div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Weight / qty</label><input id="weightInput" type="number" step="0.1" min="0.1" name="weight_or_qty" placeholder="3.5" required class="h-11 w-full rounded-md border border-line-strong bg-white px-3 font-mono text-sm focus:border-ink focus:outline-none"></div>
 <div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Paid</label><select name="payment_status" class="h-11 w-full rounded-md border border-line-strong bg-white px-3 text-sm"><option value="unpaid">Unpaid</option><option value="paid">Paid</option></select></div>
 </div>
-<div class="flex gap-2 border-t border-line pt-5"><button class="h-11 rounded-md bg-ink px-6 text-sm font-semibold text-white hover:bg-black">Save order</button><a href="{{ route('orders.index') }}" class="h-11 rounded-md border border-line-strong px-5 text-sm font-medium leading-10 hover:bg-white">Cancel</a></div>
+<div class="flex gap-2 border-t border-line pt-5"><button class="h-11 rounded-md bg-ink px-6 text-sm font-semibold text-white hover:bg-black">Save order</button><a href="{{ route('orders.index') }}" class="h-11 rounded-md border border-line-strong px-5 text-sm font-medium leading-10 hover:bg-paper">Cancel</a></div>
 </form>
 <aside class="h-fit border border-line bg-white lg:sticky lg:top-20">
 <div class="border-b border-dashed border-line-strong px-5 py-4">

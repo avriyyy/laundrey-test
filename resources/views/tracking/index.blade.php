@@ -4,17 +4,26 @@
 @section('content')
 {{-- Hero --}}
 <div class="grid grid-cols-1 gap-10 md:grid-cols-2">
-<div>
+<div class="flex flex-col">
 <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">Laundrey · Laundry tracking</p>
 <h1 class="mt-3 font-display text-5xl font-bold leading-[1.02] tracking-tight md:text-6xl">Know exactly where your laundry is.</h1>
 <p class="mt-5 max-w-md text-base leading-relaxed text-ink-2">Drop off your clothes, keep the receipt, and follow every stage online - from intake to ready for pickup. No calls, no guessing.</p>
+@if(isset($order) && $order && $order->tenant)
+<div class="relative mt-6 flex max-w-md flex-1 flex-col justify-center border border-line bg-white px-6 py-8">
+<p class="absolute left-6 top-4 font-mono text-[11px] uppercase tracking-[0.22em] text-muted">This receipt belongs to</p>
+<div class="text-center">
+<p class="font-display text-3xl font-bold tracking-tight md:text-4xl">{{ $order->tenant->name }}<span class="text-primary">.</span></p>
+<p class="mt-2 font-mono text-xs text-muted">{{ $order->tenant->prefix }} receipts · {{ $order->invoice_number }}</p>
+</div>
+</div>
+@endif
 </div>
 <div>
 <div class="border border-line bg-white">
 <div class="border-b border-line px-5 py-3 font-mono text-[11px] uppercase tracking-[0.22em] text-muted">Track a receipt</div>
 <div class="px-5 py-5">
 <form method="POST" action="{{ route('track.search') }}" class="flex flex-col gap-2 sm:flex-row">@csrf
-<input name="invoice_number" value="{{ old('invoice_number', $order->invoice_number ?? '') }}" placeholder="INV-20261006-001" required spellcheck="false"
+<input name="invoice_number" value="{{ old('invoice_number', $order->invoice_number ?? ($prefill ?? '')) }}" placeholder="INV-20261006-001" required spellcheck="false"
 class="h-12 flex-1 rounded-md border border-line-strong bg-white px-4 font-mono text-sm tracking-wide placeholder:text-muted focus:border-ink focus:outline-none">
 <button class="h-12 shrink-0 rounded-md bg-ink px-6 text-sm font-semibold text-white hover:bg-black">Track →</button>
 </form>
@@ -66,22 +75,16 @@ class="h-12 flex-1 rounded-md border border-line-strong bg-white px-4 font-mono 
 </div>
 </div>
 
-{{-- Price board --}}
+{{-- Start here --}}
 <div class="mt-16 grid grid-cols-1 gap-10 md:grid-cols-2">
 <div class="border-t border-ink md:order-1 order-2">
-@foreach($services as $s)
-<div class="flex items-baseline gap-2 border-b border-line py-3">
-<span class="text-sm font-medium">{{ $s->service_name }}</span>
-<span class="mx-1 flex-1 border-b border-dotted border-line-strong"></span>
-<span class="font-mono text-sm font-bold tabular-nums">Rp{{ number_format($s->price_per_unit, 0, ',', '.') }}<span class="font-normal text-muted">/{{ $s->unit_type }}</span></span>
-</div>
-@endforeach
-<p class="mt-3 font-mono text-xs text-muted">Turnaround 6-48 hours depending on service.</p>
+<div class="flex gap-4 border-b border-line py-4"><span class="font-mono text-sm font-bold text-primary">01</span><div><p class="font-semibold">Register the shop</p><p class="mt-0.5 text-[13px] leading-relaxed text-ink-2">Pick a 3-letter receipt code at <a href="{{ route('register') }}" class="font-semibold text-primary hover:underline">/register</a>.</p></div></div>
+<div class="flex gap-4 border-b border-line py-4"><span class="font-mono text-sm font-bold text-primary">02</span><div><p class="font-semibold">Record the basics</p><p class="mt-0.5 text-[13px] leading-relaxed text-ink-2">Add services, customer files, then daily orders.</p></div></div>
+<div class="flex gap-4 border-b border-line py-4"><span class="font-mono text-sm font-bold text-primary">03</span><div><p class="font-semibold">Move stages</p><p class="mt-0.5 text-[13px] leading-relaxed text-ink-2">Advance Received to Completed from Operations.</p></div></div>
 </div>
 <div class="md:order-2">
-<p class="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">No. 02 - Price board</p>
-<h2 class="mt-2 font-display text-2xl font-bold tracking-tight md:text-3xl">Clear rates,<br>no surprises.</h2>
-<p class="mt-3 max-w-sm text-sm leading-relaxed text-ink-2">Pinned at the counter and mirrored here. What you see is what you pay.</p>
+<p class="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">No. 02 - Start here</p>
+<h2 class="mt-2 font-display text-2xl font-bold tracking-tight md:text-3xl">Open<br>a shop.</h2>
 </div>
 </div>
 
@@ -104,10 +107,10 @@ class="h-12 flex-1 rounded-md border border-line-strong bg-white px-4 font-mono 
 <div class="mx-auto max-w-xl">
 <div>
 <h2 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Something wrong?</h2>
-<p class="mt-2 text-sm leading-relaxed text-ink-2">Wrong status, missing load, or a billing question - report it straight to our WhatsApp.</p>
+<p class="mt-2 text-sm leading-relaxed text-ink-2">Wrong status, missing load, or a billing question - report it straight to our email.</p>
 </div>
 <div class="mt-6 flex justify-center gap-2">
-<a href="https://wa.me/6200000000000?text=Hello%20Laundrey%2C%20I%20want%20to%20report%20a%20problem" target="_blank" rel="noopener" class="h-11 rounded-md bg-ink px-6 text-sm font-semibold leading-10 text-white hover:bg-black">Report via WhatsApp</a>
+<a href="mailto:help@laundrey.test?subject=Problem%20report&body=Hello%20Laundrey%2C%20I%20want%20to%20report%20a%20problem%3A%20" class="h-11 rounded-md bg-ink px-6 text-sm font-semibold leading-10 text-white hover:bg-black">Report via Email</a>
 </div>
 </div>
 </div>

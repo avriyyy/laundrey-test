@@ -14,6 +14,7 @@ class OperationWebController extends Controller
     public function index(Request $request): View
     {
         $kueri = Order::query()->with(['customer', 'service'])
+            ->where('tenant_id', auth()->user()->tenant_id)
             ->whereNotIn('current_status', ['Completed']);
 
         if ($request->filled('cari')) {
@@ -25,8 +26,10 @@ class OperationWebController extends Controller
         return view('operations.index', compact('orders'));
     }
 
-    public function updateStatus(Request $request, Order $order): RedirectResponse
+    public function updateStatus(Request $request, int $order): RedirectResponse
     {
+        $order = Order::where('tenant_id', auth()->user()->tenant_id)->findOrFail($order);
+
         $data = $request->validate([
             'status' => ['required', 'in:'.implode(',', Order::STATUSES)],
             'notes' => ['nullable', 'string', 'max:255'],

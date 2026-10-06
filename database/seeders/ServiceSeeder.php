@@ -3,12 +3,15 @@
 namespace Database\Seeders;
 
 use App\Models\Service;
+use App\Models\Tenant;
 use Illuminate\Database\Seeder;
 
 class ServiceSeeder extends Seeder
 {
     public function run(): void
     {
+        $tenantId = Tenant::first()?->id;
+
         $daftar = [
             ['service_name' => 'Cuci Kering Reguler', 'price_per_unit' => 8000, 'unit_type' => 'kg', 'estimated_hours' => 48],
             ['service_name' => 'Cuci Setrika Express', 'price_per_unit' => 15000, 'unit_type' => 'kg', 'estimated_hours' => 12],
@@ -17,7 +20,7 @@ class ServiceSeeder extends Seeder
         ];
 
         foreach ($daftar as $item) {
-            Service::create($item);
+            Service::create($item + ['tenant_id' => $tenantId]);
         }
     }
 }

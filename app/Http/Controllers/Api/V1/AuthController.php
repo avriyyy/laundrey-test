@@ -4,13 +4,62 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    public function register(RegisterRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+
+        $result = DB::transaction(function () use ($data) {
+            $tenant = Tenant::create([
+                'name' => $data['laundry_name'],
+                'prefix' => $data['prefix'],
+            ]);
+
+            $admin = User::create([
+                'tenant_id' => $tenant->id,
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'role' => 'admin',
+                'phone' => $data['phone'] ?? null,
+            ]);
+
+            $token = $admin->createToken('token-perangkat', ['order:tulis', 'service:tulis', 'track:tulis'])->plainTextToken;
+
+            return [$tenant, $admin, $token];
+        });
+
+        [$tenant, $admin, $token] = $result;
+
+        return response()->json([
+            'sukses' => true,
+            'pesan' => 'Laundry registered',
+            'data' => [
+                'tenant' => [
+                    'id' => $tenant->id,
+                    'name' => $tenant->name,
+                    'prefix' => $tenant->prefix,
+                ],
+                'pengguna' => [
+                    'id' => $admin->id,
+                    'name' => $admin->name,
+                    'email' => $admin->email,
+                    'role' => $admin->role,
+                ],
+                'token' => $token,
+            ],
+        ], 201);
+    }
+
     public function login(LoginRequest $request): JsonResponse
     {
         $data = $request->validated();
