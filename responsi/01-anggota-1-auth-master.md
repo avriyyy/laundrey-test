@@ -2,7 +2,7 @@
 
 **Peran:** fondasi. Dikerjakan pertama. Hasil: register/login/logout Sanctum, multi-tenant, dan **CRUD Services**. Semua kode di bawah copy-paste, sesuaikan bila perlu.
 
-**Prasyarat:** `inisialisasi.md` selesai, branch `anggota-1-auth-master`.
+**Prasyarat:** `inisialisasi.md` selesai, branch `pika` (buat: `git checkout main && git pull && git checkout -b pika`; merge ke `main` via PR setelah checklist serah terima di bawah hijau).
 
 ---
 

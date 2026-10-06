@@ -2,7 +2,7 @@
 
 **Peran:** antarmuka + rilis. **CRUD Customers**, halaman auth, tracking publik, invoice print + QR, Dockerfile + deploy, README.
 
-**Prasyarat:** branch Anggota 1+2 merge ke `main`. Branch `anggota-3-frontend` dari `main` terbaru. Package: `composer require simplesoftwareio/simple-qrcode`.
+**Prasyarat:** branch `pika`+`bahtiar` merge ke `main`. Branch `yudha` dari `main` terbaru. Package: `composer require simplesoftwareio/simple-qrcode`.
 
 Aturan desain: tanpa gradient/blob/emoji; bg kertas `#F6F5F2`; Space Grotesk (judul) + Inter (isi) + JetBrains Mono (resi/angka); radius kecil; status = label mono + titik.
 

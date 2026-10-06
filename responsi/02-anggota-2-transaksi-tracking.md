@@ -2,7 +2,7 @@
 
 **Peran:** jantung bisnis. **CRUD Orders + OrderTracks**, invoice otomatis, walk-in, search/filter, pagination, tracking publik.
 
-**Prasyarat:** branch Anggota 1 merge ke `main`. `git checkout -b anggota-2-transaksi` dari `main` terbaru.
+**Prasyarat:** branch `pika` merge ke `main`. Buat branch: `git checkout main && git pull && git checkout -b bahtiar`. Merge ke `main` via PR setelah checklist serah terima di bawah hijau.
 
 ---
 
