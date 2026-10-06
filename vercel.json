@@ -15,5 +15,5 @@
             "destination": "/api/index.php"
         }
     ],
-    "buildCommand": "composer install --prefer-dist --no-dev --optimize-autoloader && npm ci && npm run build"
+    "buildCommand": "npm ci && npm run build"
 }
