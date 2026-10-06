@@ -92,7 +92,7 @@ class="h-12 flex-1 rounded-md border border-line-strong bg-white px-4 font-mono 
 <h2 class="mt-2 font-display text-2xl font-bold tracking-tight md:text-3xl">Asked<br>often.</h2>
 </div>
 <div class="border-t border-ink">
-<div class="border-b border-line py-4"><p class="font-semibold">Do I need an account to track?</p><p class="mt-0.5 text-[13px] leading-relaxed text-ink-2">No. The receipt number is enough. Accounts are for regulars who want history and admin chat in one place.</p></div>
+<div class="border-b border-line py-4"><p class="font-semibold">Do I need an account to track?</p><p class="mt-0.5 text-[13px] leading-relaxed text-ink-2">No. The receipt number is enough - tracking here is public and needs no login.</p></div>
 <div class="border-b border-line py-4"><p class="font-semibold">What if I lose my receipt number?</p><p class="mt-0.5 text-[13px] leading-relaxed text-ink-2">Mention your name at the counter. Every load is filed under your customer ID.</p></div>
 <div class="border-b border-line py-4"><p class="font-semibold">Can I pay later?</p><p class="mt-0.5 text-[13px] leading-relaxed text-ink-2">Yes. Unpaid loads can be settled at pickup - the receipt shows the bill status.</p></div>
 </div>
@@ -103,12 +103,11 @@ class="h-12 flex-1 rounded-md border border-line-strong bg-white px-4 font-mono 
 <div class="mt-16 border border-ink bg-white px-6 py-8 text-center md:px-10 md:py-10">
 <div class="mx-auto max-w-xl">
 <div>
-<h2 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Wash with us regularly?</h2>
-<p class="mt-2 text-sm leading-relaxed text-ink-2">An account keeps every receipt in one list, with per-load tracking and a direct line to the admin.</p>
+<h2 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Something wrong?</h2>
+<p class="mt-2 text-sm leading-relaxed text-ink-2">Wrong status, missing load, or a billing question - report it straight to our WhatsApp.</p>
 </div>
 <div class="mt-6 flex justify-center gap-2">
-<a href="{{ route('register') }}" class="h-11 rounded-md bg-ink px-6 text-sm font-semibold leading-10 text-white hover:bg-black">Sign up</a>
-<a href="{{ route('login') }}" class="h-11 rounded-md border border-ink px-6 text-sm font-medium leading-10 hover:bg-ink hover:text-white">Log in</a>
+<a href="https://wa.me/6200000000000?text=Hello%20Laundrey%2C%20I%20want%20to%20report%20a%20problem" target="_blank" rel="noopener" class="h-11 rounded-md bg-ink px-6 text-sm font-semibold leading-10 text-white hover:bg-black">Report via WhatsApp</a>
 </div>
 </div>
 </div>

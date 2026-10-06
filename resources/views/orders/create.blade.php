@@ -4,14 +4,15 @@
 @section('content')
 <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">New transaction</p>
 <h1 class="mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl">Record order.</h1>
-<div class="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_260px]">
-<form method="POST" action="{{ route('orders.store') }}" class="flex max-w-xl flex-col gap-5">@csrf
+<div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+<form method="POST" action="{{ route('orders.store') }}" class="flex flex-col gap-5">@csrf
 <div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Customer (registered)</label><select id="customerSelect" name="user_id" class="h-11 w-full rounded-md border border-line-strong bg-white px-3 text-sm focus:border-ink focus:outline-none"><option value="">- walk-in / new -</option>@foreach($customers as $c)<option value="{{ $c->id }}">{{ $c->name }} · {{ $c->customerCode() }}{{ $c->phone ? ' · '.$c->phone : '' }}</option>@endforeach</select></div>
 <div id="walkinFields" class="grid grid-cols-2 gap-4">
-<div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Walk-in name</label><input name="customer_name" value="{{ old('customer_name') }}" placeholder="e.g. Sinta" class="h-11 w-full rounded-md border border-line-strong bg-white px-3 text-sm focus:border-ink focus:outline-none"></div>
-<div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Walk-in phone</label><input name="customer_phone" value="{{ old('customer_phone') }}" placeholder="08…" class="h-11 w-full rounded-md border border-line-strong bg-white px-3 font-mono text-sm focus:border-ink focus:outline-none"></div>
+<div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Walk-in name</label><input id="walkinName" name="customer_name" value="{{ old('customer_name') }}" placeholder="e.g. Sinta" class="h-11 w-full rounded-md border border-line-strong bg-white px-3 text-sm focus:border-ink focus:outline-none"></div>
+<div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Walk-in phone</label><input id="walkinPhone" name="customer_phone" value="{{ old('customer_phone') }}" placeholder="08…" class="h-11 w-full rounded-md border border-line-strong bg-white px-3 font-mono text-sm focus:border-ink focus:outline-none"></div>
 </div>
-<p class="text-xs text-muted">Pick a registered customer, or leave walk-in and type a name. A matching phone reuses the existing customer file.</p>
+<div id="lookupBox" class="hidden border border-line bg-white px-3 py-2"></div>
+<p class="text-xs text-muted">Pick a registered customer, or leave walk-in and type a name. Typing checks the file live - a match reuses it, otherwise a new file is created.</p>
 <div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Service</label><select id="serviceSelect" name="service_id" required class="h-11 w-full rounded-md border border-line-strong bg-white px-3 text-sm focus:border-ink focus:outline-none"><option value="">- pick -</option>@foreach($services as $s)<option value="{{ $s->id }}" data-price="{{ $s->price_per_unit }}" data-unit="{{ $s->unit_type }}">{{ $s->service_name }} — Rp{{ number_format($s->price_per_unit, 0, ',', '.') }}/{{ $s->unit_type }}</option>@endforeach</select></div>
 <div class="grid grid-cols-2 gap-4">
 <div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Weight / qty</label><input id="weightInput" type="number" step="0.1" min="0.1" name="weight_or_qty" placeholder="3.5" required class="h-11 w-full rounded-md border border-line-strong bg-white px-3 font-mono text-sm focus:border-ink focus:outline-none"></div>
@@ -50,5 +51,33 @@ w.addEventListener('input', update);
 function toggleWalkin() { walkin.style.display = cust.value ? 'none' : ''; }
 cust.addEventListener('change', toggleWalkin);
 toggleWalkin();
+const wn = document.getElementById('walkinName');
+const wp = document.getElementById('walkinPhone');
+const lb = document.getElementById('lookupBox');
+let timer = null;
+async function lookup() {
+  const q = (wp.value || wn.value || '').trim();
+  if (cust.value || q.length < 2) { lb.classList.add('hidden'); lb.innerHTML = ''; return; }
+  try {
+    const r = await fetch('{{ route('customers.lookup') }}?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } });
+    const j = await r.json();
+    if (!j.data.length) {
+      lb.classList.remove('hidden');
+      lb.innerHTML = '<p class="py-1 font-mono text-xs text-muted">No file found - a new customer will be created.</p>';
+      return;
+    }
+    lb.classList.remove('hidden');
+    lb.innerHTML = j.data.map(m =>
+      `<button type="button" data-id="${m.id}" class="flex w-full items-center justify-between gap-2 py-1.5 text-left"><span class="text-[13px]"><b>${m.name}</b> <span class="font-mono text-[11px] text-muted">${m.code}${m.phone ? ' · ' + m.phone : ''} · ${m.orders} loads</span></span><span class="shrink-0 font-mono text-[11px] font-bold uppercase tracking-widest text-primary">Use</span></button>`
+    ).join('');
+    lb.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      cust.value = b.dataset.id;
+      toggleWalkin();
+      lb.classList.add('hidden');
+    }));
+  } catch (e) {}
+}
+wn.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(lookup, 350); });
+wp.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(lookup, 350); });
 </script>
 @endsection

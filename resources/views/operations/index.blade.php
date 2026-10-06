@@ -33,7 +33,7 @@
 <form method="POST" action="{{ route('operations.status', $o) }}" class="flex flex-col gap-2 lg:justify-center">@csrf
 <div class="flex gap-2">
 <select name="status" required class="h-10 flex-1 rounded-md border border-line-strong bg-white px-2.5 text-[13px] focus:border-ink focus:outline-none">@foreach(['Washing','Drying','Ironing','Ready','Completed'] as $s)<option value="{{ $s }}" @selected($s === $steps[min($idx + 1, 5)])>→ {{ $s }}</option>@endforeach</select>
-<button class="h-10 shrink-0 rounded-md bg-ink px-4 text-[13px] font-semibold text-white hover:bg-black">Log</button>
+<button class="h-10 shrink-0 rounded-md bg-ink px-4 text-[13px] font-semibold text-white hover:bg-black">Update</button>
 </div>
 <input name="notes" placeholder="Note (optional)" class="h-9 rounded-md border border-line bg-white px-2.5 text-[13px] placeholder:text-muted focus:border-ink focus:outline-none">
 </form>

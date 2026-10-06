@@ -9,7 +9,7 @@
 </div>
 <a href="{{ route('orders.create') }}" class="h-10 rounded-md bg-ink px-4 text-sm font-semibold leading-10 text-white hover:bg-black">+ Record order</a>
 </div>
-<form method="GET" class="mt-6 flex max-w-2xl flex-col gap-2 sm:flex-row">
+<form method="GET" class="mt-6 flex flex-col gap-2 sm:flex-row">
 <input name="cari" placeholder="Find receipt / name…" value="{{ request('cari') }}" class="h-10 flex-1 rounded-md border border-line-strong bg-white px-3 text-sm focus:border-ink focus:outline-none">
 <select name="status" class="h-10 rounded-md border border-line-strong bg-white px-3 text-sm sm:max-w-44"><option value="">All stages</option>@foreach(['Received','Washing','Drying','Ironing','Ready','Completed'] as $s)<option value="{{ $s }}" @selected(request('status') === $s)>{{ $s }}</option>@endforeach</select>
 <button class="h-10 shrink-0 rounded-md border border-ink px-4 text-sm font-medium hover:bg-ink hover:text-white">Filter</button>

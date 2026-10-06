@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
-use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,30 +11,6 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function register(RegisterRequest $request): JsonResponse
-    {
-        $data = $request->validated();
-        $data['password'] = Hash::make($data['password']);
-        $data['role'] = 'pelanggan';
-
-        $pengguna = User::create($data);
-        $token = $pengguna->createToken('token-perangkat')->plainTextToken;
-
-        return response()->json([
-            'sukses' => true,
-            'pesan' => 'Registrasi berhasil',
-            'data' => [
-                'pengguna' => [
-                    'id' => $pengguna->id,
-                    'name' => $pengguna->name,
-                    'email' => $pengguna->email,
-                    'role' => $pengguna->role,
-                ],
-                'token' => $token,
-            ],
-        ], 201);
-    }
-
     public function login(LoginRequest $request): JsonResponse
     {
         $data = $request->validated();
@@ -46,6 +21,13 @@ class AuthController extends Controller
                 'sukses' => false,
                 'pesan' => 'Email atau kata sandi tidak sesuai',
             ], 401);
+        }
+
+        if ($pengguna->role !== 'admin') {
+            return response()->json([
+                'sukses' => false,
+                'pesan' => 'Customer accounts are managed by the laundry counter',
+            ], 403);
         }
 
         $abilities = match ($pengguna->role) {

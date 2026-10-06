@@ -1,0 +1,5 @@
+<div class="flex flex-col gap-4">
+<div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Name</label><input name="name" value="{{ old('name', $customer->name ?? '') }}" required class="h-11 w-full rounded-md border border-line-strong bg-white px-3 text-sm focus:border-ink focus:outline-none"></div>
+<div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Phone (WhatsApp)</label><input name="phone" value="{{ old('phone', $customer->phone ?? '') }}" placeholder="08…" class="h-11 w-full rounded-md border border-line-strong bg-white px-3 font-mono text-sm focus:border-ink focus:outline-none"></div>
+<div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Email (optional)</label><input type="email" name="email" value="{{ old('email', $customer->email ?? '') }}" class="h-11 w-full rounded-md border border-line-strong bg-white px-3 font-mono text-sm focus:border-ink focus:outline-none"></div>
+</div>
