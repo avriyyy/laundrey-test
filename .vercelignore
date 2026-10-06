@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+tests
+.opencode
+.claude
+.agents
+*.log
+.env
+.env.*
+!.env.example
+database/database.sqlite
