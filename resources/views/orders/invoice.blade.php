@@ -48,7 +48,7 @@
 <td>{{ $order->service->service_name }}</td>
 <td class="mono">{{ $order->weight_or_qty }} {{ $order->service->unit_type }}</td>
 <td class="right mono">Rp{{ number_format($order->service->price_per_unit, 0, ',', '.') }}</td>
-<td class="right mono">Rp{{ number_format($order->total_price, 0, ',', '.') }}@if($order->discount_percent > 0)<br><small>-{{ $order->discount_percent }}% {{ $order->promo->code ?? '' }}</small>@endif</td>
+<td class="right mono">Rp{{ number_format($order->total_price, 0, ',', '.') }}@if($order->discount_percent > 0)<br><small>-{{ $order->discount_percent }}% {{ $order->promo->name ?? '' }}</small>@endif</td>
 </tr>
 </tbody>
 </table>

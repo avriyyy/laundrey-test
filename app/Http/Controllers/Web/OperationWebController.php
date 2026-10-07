@@ -39,8 +39,8 @@ class OperationWebController extends Controller
             return back()->withErrors(['status' => 'Order is already completed']);
         }
 
-        if ($data['status'] === 'Completed' && auth()->user()->role !== 'admin') {
-            return back()->withErrors(['status' => 'Only an admin can complete orders']);
+        if ($data['status'] === 'Completed' && auth()->user()->role !== 'tenant') {
+            return back()->withErrors(['status' => 'Only a tenant operator can complete orders']);
         }
 
         OrderTrack::create([

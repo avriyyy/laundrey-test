@@ -12,11 +12,11 @@
 <div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Walk-in phone</label><input id="walkinPhone" name="customer_phone" value="{{ old('customer_phone') }}" placeholder="08…" class="h-11 w-full rounded-md border border-line-strong bg-white px-3 font-mono text-sm focus:border-ink focus:outline-none"></div>
 </div>
 <div id="lookupBox" class="hidden border border-line bg-white px-3 py-2"></div>
-<p class="text-xs text-muted">Pick a registered customer, or leave walk-in and type a name. Typing checks the file live - a match reuses it, otherwise a new file is created.</p>
+<p class="text-xs text-muted">Pick a registered customer, or leave walk-in and type a name. Typing checks records live - a match reuses it, otherwise a new record is created.</p>
 <div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Service</label><select id="serviceSelect" name="service_id" required class="h-11 w-full rounded-md border border-line-strong bg-white px-3 text-sm focus:border-ink focus:outline-none"><option value="">- pick -</option>@foreach($services as $s)<option value="{{ $s->id }}" data-price="{{ $s->price_per_unit }}" data-unit="{{ $s->unit_type }}">{{ $s->service_name }} — Rp{{ number_format($s->price_per_unit, 0, ',', '.') }}/{{ $s->unit_type }}</option>@endforeach</select></div>
 <div class="grid grid-cols-2 gap-4">
 <div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Weight / qty</label><input id="weightInput" type="number" step="0.1" min="0.1" name="weight_or_qty" placeholder="3.5" required class="h-11 w-full rounded-md border border-line-strong bg-white px-3 font-mono text-sm focus:border-ink focus:outline-none"></div>
-<div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Promo code (optional)</label><input name="promo_code" value="{{ old('promo_code') }}" placeholder="e.g. HEMAT10" class="h-11 w-full rounded-md border border-line-strong bg-white px-3 font-mono text-sm uppercase focus:border-ink focus:outline-none"></div>
+<div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Promo</label><div class="flex h-11 items-center rounded-md border border-line bg-paper px-3 text-sm text-ink-2"><span id="promoHint">Auto by service + weight</span></div></div>
 <div><label class="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Paid</label><select name="payment_status" class="h-11 w-full rounded-md border border-line-strong bg-white px-3 text-sm"><option value="unpaid">Unpaid</option><option value="paid">Paid</option></select></div>
 </div>
 <div class="flex gap-2 border-t border-line pt-5"><button class="h-11 rounded-md bg-ink px-6 text-sm font-semibold text-white hover:bg-black">Save order</button><a href="{{ route('orders.index') }}" class="h-11 rounded-md border border-line-strong px-5 text-sm font-medium leading-10 hover:bg-paper">Cancel</a></div>
@@ -42,10 +42,30 @@ function update() {
   const opt = svc.selectedOptions[0];
   const price = opt && opt.dataset.price ? parseFloat(opt.dataset.price) : 0;
   const weight = parseFloat(w.value) || 0;
+  const sid = svc.value ? parseInt(svc.value) : 0;
+  const unit = opt && opt.dataset.unit ? opt.dataset.unit : '';
+  const promo = findPromo(sid, weight, unit);
+  const gross = price * weight;
   if (price > 0 && weight > 0) {
-    total.textContent = fmt(price * weight);
-    calc.textContent = weight + ' ' + opt.dataset.unit + ' x ' + fmt(price);
-  } else { total.textContent = 'Rp0'; calc.textContent = '-'; }
+    if (promo) {
+      total.textContent = fmt(gross * (1 - promo.percent / 100));
+      calc.textContent = `${weight} ${unit} x ${fmt(price)} - ${promo.percent}% ${promo.name}`;
+      document.getElementById('promoHint').textContent = `${promo.name} -${promo.percent}% applied`;
+    } else {
+      total.textContent = fmt(gross);
+      calc.textContent = `${weight} ${unit} x ${fmt(price)}`;
+      document.getElementById('promoHint').textContent = 'No promo for this weight';
+    }
+  } else {
+    total.textContent = 'Rp0';
+    calc.textContent = '-';
+    document.getElementById('promoHint').textContent = 'Auto by service + weight';
+  }
+}
+const promos = {!! $promoOptions !!};
+function findPromo(sid, weight, unit) {
+  if (!sid || !(weight > 0)) return null;
+  return promos.find((p) => p.active && p.services.includes(sid) && p.min_unit === unit && weight >= p.min_qty) || null;
 }
 svc.addEventListener('change', update);
 w.addEventListener('input', update);
@@ -64,7 +84,7 @@ async function lookup() {
     const j = await r.json();
     if (!j.data.length) {
       lb.classList.remove('hidden');
-      lb.innerHTML = '<p class="py-1 font-mono text-xs text-muted">No file found - a new customer will be created.</p>';
+      lb.innerHTML = '<p class="py-1 font-mono text-xs text-muted">No match - a new customer will be created.</p>';
       return;
     }
     lb.classList.remove('hidden');

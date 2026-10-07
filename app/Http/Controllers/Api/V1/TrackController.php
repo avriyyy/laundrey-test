@@ -48,10 +48,10 @@ class TrackController extends Controller
             ], 422);
         }
 
-        if ($data['status'] === 'Completed' && $request->user()->role !== 'admin') {
+        if ($data['status'] === 'Completed' && $request->user()->role !== 'tenant') {
             return response()->json([
                 'sukses' => false,
-                'pesan' => 'Hanya admin yang bisa menyelesaikan order',
+                'pesan' => 'Hanya operator tenant yang bisa menyelesaikan order',
             ], 403);
         }
 

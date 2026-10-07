@@ -29,7 +29,7 @@ class AuthController extends Controller
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
-                'role' => 'admin',
+                'role' => 'tenant',
                 'phone' => $data['phone'] ?? null,
             ]);
 
@@ -72,7 +72,7 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if ($pengguna->role !== 'admin') {
+        if (! in_array($pengguna->role, ['tenant', 'admin'], true)) {
             return response()->json([
                 'sukses' => false,
                 'pesan' => 'Customer accounts are managed by the laundry counter',
@@ -80,7 +80,7 @@ class AuthController extends Controller
         }
 
         $abilities = match ($pengguna->role) {
-            'admin' => ['order:tulis', 'service:tulis', 'track:tulis'],
+            'tenant', 'admin' => ['order:tulis', 'service:tulis', 'track:tulis'],
             default => [],
         };
 

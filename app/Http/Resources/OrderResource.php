@@ -18,7 +18,7 @@ class OrderResource extends JsonResource
             'promo' => $this->whenLoaded('promo', function () {
                 return $this->promo ? [
                     'id' => $this->promo->id,
-                    'code' => $this->promo->code,
+                    'name' => $this->promo->name,
                     'percent' => (int) $this->promo->percent,
                 ] : null;
             }),

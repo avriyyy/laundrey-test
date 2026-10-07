@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
         View::composer('layouts.app', function ($view) {
             $user = auth()->user();
 
-            $view->with('layoutTenant', $user && $user->role === 'admin' ? $user->tenant : null);
+            $view->with('layoutTenant', $user && $user->role === 'tenant' ? $user->tenant : null);
         });
     }
 }

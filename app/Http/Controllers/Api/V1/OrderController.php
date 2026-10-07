@@ -8,13 +8,10 @@ use App\Http\Requests\UpdateOrderRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\OrderTrack;
-use App\Models\Promo;
 use App\Models\Service;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class OrderController extends Controller
 {
@@ -52,9 +49,10 @@ class OrderController extends Controller
     {
         $tenantId = $request->user()->tenant_id;
         $data = $request->validated();
-        $service = Service::where('tenant_id', $tenantId)->findOrFail($data['service_id']);
+        $service = Service::where('tenant_id', $tenantId)->with('promos')->findOrFail($data['service_id']);
         $customer = $this->resolveCustomer($tenantId, $data);
-        $promo = $this->resolvePromo($tenantId, $data, (int) $service->id);
+        $weight = (float) $data['weight_or_qty'];
+        $promo = $service->promoFor($weight);
 
         $order = DB::transaction(function () use ($data, $request, $service, $customer, $tenantId, $promo) {
             $gross = (float) $data['weight_or_qty'] * (float) $service->price_per_unit;
@@ -90,45 +88,6 @@ class OrderController extends Controller
             'pesan' => 'Order berhasil dibuat',
             'data' => new OrderResource($order),
         ], 201);
-    }
-
-    private function resolvePromo(int $tenantId, array $data, int $serviceId): ?Promo
-    {
-        if (empty($data['promo_code'])) {
-            return null;
-        }
-
-        $candidate = Promo::where('tenant_id', $tenantId)
-            ->where('code', strtoupper($data['promo_code']))
-            ->first();
-
-        return $candidate && $candidate->isValidFor($serviceId) ? $candidate : null;
-    }
-
-    private function resolveCustomer(int $tenantId, array $data): User
-    {
-        if (! empty($data['user_id'])) {
-            return User::where('tenant_id', $tenantId)->where('role', 'pelanggan')->findOrFail($data['user_id']);
-        }
-
-        $phone = $data['customer_phone'] ?? null;
-
-        if ($phone) {
-            $existing = User::where('tenant_id', $tenantId)->where('role', 'pelanggan')->where('phone', $phone)->first();
-
-            if ($existing !== null) {
-                return $existing;
-            }
-        }
-
-        return User::create([
-            'tenant_id' => $tenantId,
-            'name' => $data['customer_name'],
-            'email' => 'walkin-'.now()->format('YmdHis').'-'.str()->random(6).'@laundrey.local',
-            'password' => Hash::make(str()->random(32)),
-            'role' => 'pelanggan',
-            'phone' => $phone,
-        ]);
     }
 
     public function show(Request $request, int $order): JsonResponse

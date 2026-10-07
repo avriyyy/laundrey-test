@@ -22,11 +22,20 @@ class LaundreySeeder extends Seeder
         $this->call(ServiceSeeder::class);
 
         $admin = User::create([
-            'tenant_id' => $tenant->id,
-            'name' => 'Admin Laundrey',
+            'tenant_id' => null,
+            'name' => 'Admin',
             'email' => 'admin@laundrey.test',
             'password' => Hash::make('password123'),
             'role' => 'admin',
+            'phone' => null,
+        ]);
+
+        $operator = User::create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Operator Laundrey',
+            'email' => 'inv@laundrey.test',
+            'password' => Hash::make('password123'),
+            'role' => 'tenant',
             'phone' => '081111111111',
         ]);
 
@@ -58,7 +67,7 @@ class LaundreySeeder extends Seeder
 
             OrderTrack::create([
                 'order_id' => $order->id,
-                'updated_by' => $admin->id,
+                'updated_by' => $operator->id,
                 'status' => 'Received',
                 'notes' => 'Order received at counter',
             ]);
@@ -69,20 +78,20 @@ class LaundreySeeder extends Seeder
 
     private function demoTenant(): void
     {
-        User::firstOrCreate(
-            ['email' => 'super@laundrey.test'],
-            [
-                'tenant_id' => null,
-                'name' => 'Platform Admin',
-                'password' => Hash::make('password123'),
-                'role' => 'superadmin',
-                'phone' => null,
-            ]
-        );
-
         $tenant = Tenant::firstOrCreate(
             ['prefix' => 'KLN'],
             ['name' => 'Klin Laundry']
+        );
+
+        $klnOperator = User::firstOrCreate(
+            ['email' => 'kln@laundrey.test'],
+            [
+                'tenant_id' => $tenant->id,
+                'name' => 'Operator Klin',
+                'password' => Hash::make('password123'),
+                'role' => 'tenant',
+                'phone' => '084444444444',
+            ]
         );
 
         User::firstOrCreate(
@@ -91,7 +100,7 @@ class LaundreySeeder extends Seeder
                 'tenant_id' => $tenant->id,
                 'name' => 'Bu Klin',
                 'password' => Hash::make('password123'),
-                'role' => 'admin',
+                'role' => 'pelanggan',
                 'phone' => '084444444444',
             ]
         );
@@ -130,14 +139,14 @@ class LaundreySeeder extends Seeder
 
         OrderTrack::create([
             'order_id' => $order->id,
-            'updated_by' => User::where('tenant_id', $tenant->id)->where('role', 'admin')->first()->id,
+            'updated_by' => $klnOperator->id,
             'status' => 'Received',
             'notes' => 'Order received at counter',
         ]);
 
         OrderTrack::create([
             'order_id' => $order->id,
-            'updated_by' => User::where('tenant_id', $tenant->id)->where('role', 'admin')->first()->id,
+            'updated_by' => $klnOperator->id,
             'status' => 'Washing',
             'notes' => null,
         ]);

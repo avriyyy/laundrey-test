@@ -8,7 +8,10 @@
 <h1 class="mt-1 font-display text-3xl font-bold tracking-tight">{{ $tenant->name }}</h1>
 <p class="mt-1 text-sm text-ink-2">Admins: {{ $admins->pluck('email')->join(', ') ?: 'none' }}</p>
 </div>
+<div class="flex gap-2">
+<a href="{{ route('admin.tenants.edit', $tenant) }}" class="h-9 rounded-md border border-ink px-3 text-[13px] font-medium leading-8 hover:bg-ink hover:text-white">Edit</a>
 <form method="POST" action="{{ route('admin.tenants.destroy', $tenant) }}" onsubmit="return confirm('Delete this shop and ALL its data?')">@csrf @method('DELETE')<button class="h-9 rounded-md px-3 text-[13px] text-muted hover:text-red-600">Delete shop</button></form>
+</div>
 </div>
 
 <div class="mt-6 grid grid-cols-3 border-y border-ink py-1">

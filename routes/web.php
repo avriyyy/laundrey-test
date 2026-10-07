@@ -26,12 +26,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthWebController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::middleware('role:admin')->group(function () {
+    Route::middleware('role:tenant')->group(function () {
         Route::get('/orders/{order}/invoice', [OrderWebController::class, 'invoice'])->name('orders.invoice');
         Route::get('/orders/{order}/invoice.pdf', [OrderWebController::class, 'invoicePdf'])->name('orders.invoice.pdf');
         Route::resource('orders', OrderWebController::class);
-        Route::resource('services', ServiceWebController::class)->except(['create', 'show', 'edit']);
-        Route::resource('promos', PromoWebController::class)->except(['create', 'show', 'edit']);
+        Route::resource('services', ServiceWebController::class)->except(['show']);
+        Route::resource('promos', PromoWebController::class)->except(['show']);
         Route::resource('customers', CustomerWebController::class);
         Route::get('/customers-lookup', [CustomerWebController::class, 'lookup'])->name('customers.lookup');
         Route::put('/settings', [SettingWebController::class, 'update'])->name('settings.update');
@@ -39,10 +39,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/operations/{order}/status', [OperationWebController::class, 'updateStatus'])->name('operations.status');
     });
 
-    Route::middleware('role:superadmin')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'platform'])->name('dashboard');
-            Route::resource('tenants', TenantWebController::class)->only(['index', 'show', 'destroy']);
+            Route::resource('tenants', TenantWebController::class);
         });
     });
 });

@@ -7,6 +7,7 @@
 <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">{{ $tenants->total() }} shops · {{ $totalOrders }} orders platform-wide</p>
 <h1 class="mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl">Tenants.</h1>
 </div>
+<a href="{{ route('admin.tenants.create') }}" class="h-10 rounded-md bg-ink px-4 text-sm font-semibold leading-10 text-white hover:bg-black">+ Add tenant</a>
 </div>
 <form method="GET" class="mt-6 flex gap-2">
 <input name="cari" placeholder="Find shop or prefix…" value="{{ request('cari') }}" class="h-10 flex-1 rounded-md border border-line-strong bg-white px-3 text-sm focus:border-ink focus:outline-none">

@@ -14,9 +14,10 @@ class Promo extends Model
 
     protected $fillable = [
         'tenant_id',
-        'code',
         'name',
         'percent',
+        'min_qty',
+        'min_unit',
         'active',
         'starts_at',
         'ends_at',
@@ -26,6 +27,7 @@ class Promo extends Model
     {
         return [
             'percent' => 'integer',
+            'min_qty' => 'decimal:2',
             'active' => 'boolean',
             'starts_at' => 'date',
             'ends_at' => 'date',
@@ -47,9 +49,17 @@ class Promo extends Model
         return $this->belongsTo(Tenant::class);
     }
 
-    public function isValidFor(int $serviceId): bool
+    public function isValidFor(int $serviceId, float $qty, ?string $unit = null): bool
     {
         if (! $this->active) {
+            return false;
+        }
+
+        if ($unit !== null && $this->min_unit !== $unit) {
+            return false;
+        }
+
+        if ((float) $this->min_qty > 0 && $qty < (float) $this->min_qty) {
             return false;
         }
 

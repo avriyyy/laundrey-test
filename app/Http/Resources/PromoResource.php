@@ -11,9 +11,9 @@ class PromoResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'code' => $this->code,
             'name' => $this->name,
             'percent' => (int) $this->percent,
+            'min_qty' => (float) $this->min_qty,
             'active' => (bool) $this->active,
             'starts_at' => $this->starts_at?->toDateString(),
             'ends_at' => $this->ends_at?->toDateString(),

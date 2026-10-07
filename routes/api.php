@@ -27,7 +27,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders', [OrderController::class, 'index']);
         Route::get('/orders/{order}', [OrderController::class, 'show']);
 
-        Route::middleware('role:admin')->group(function () {
+        Route::middleware('role:tenant')->group(function () {
             Route::post('/services', [ServiceController::class, 'store']);
             Route::put('/services/{service}', [ServiceController::class, 'update']);
             Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
@@ -39,7 +39,7 @@ Route::prefix('v1')->group(function () {
             Route::put('/orders/{order}', [OrderController::class, 'update']);
         });
 
-        Route::middleware('role:admin')->group(function () {
+        Route::middleware('role:tenant')->group(function () {
             Route::post('/orders/{order}/tracks', [TrackController::class, 'store']);
         });
     });

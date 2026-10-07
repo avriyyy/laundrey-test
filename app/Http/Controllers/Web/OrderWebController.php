@@ -46,8 +46,14 @@ class OrderWebController extends Controller
         $tenantId = auth()->user()->tenant_id;
         $services = Service::where('tenant_id', $tenantId)->orderBy('service_name')->get();
         $customers = User::where('tenant_id', $tenantId)->where('role', 'pelanggan')->orderBy('name')->get();
+        $promos = Promo::where('tenant_id', $tenantId)->with('services:id')->orderBy('name')->get(['id', 'name', 'percent', 'min_qty', 'min_unit', 'active', 'starts_at', 'ends_at']);
+        $promoOptions = $promos->map(fn ($p) => [
+            'id' => $p->id, 'name' => $p->name, 'percent' => $p->percent,
+            'min_qty' => (float) $p->min_qty, 'min_unit' => $p->min_unit, 'active' => (bool) $p->active,
+            'services' => $p->services->pluck('id')->toArray(),
+        ])->toJson();
 
-        return view('orders.create', compact('services', 'customers'));
+        return view('orders.create', compact('services', 'customers', 'promoOptions'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -57,14 +63,14 @@ class OrderWebController extends Controller
             'customer_name' => ['required_without:user_id', 'nullable', 'string', 'max:100'],
             'customer_phone' => ['nullable', 'string', 'max:20'],
             'service_id' => ['required', 'exists:services,id'],
-            'promo_code' => ['nullable', 'string', 'max:20'],
             'weight_or_qty' => ['required', 'numeric', 'min:0.1', 'max:1000'],
             'payment_status' => ['sometimes', 'in:unpaid,paid'],
         ]);
 
         $service = Service::where('tenant_id', auth()->user()->tenant_id)->findOrFail($data['service_id']);
         $customer = $this->resolveCustomer(auth()->user()->tenant_id, $data);
-        $promo = $this->resolvePromo(auth()->user()->tenant_id, $data, (int) $service->id);
+        $service->load('promos');
+        $promo = $service->promoFor((float) $data['weight_or_qty']);
 
         DB::transaction(function () use ($data, $service, $customer, $promo, &$invoiceId) {
             $gross = (float) $data['weight_or_qty'] * (float) $service->price_per_unit;
@@ -96,19 +102,6 @@ class OrderWebController extends Controller
         return redirect()->route('orders.show', $invoiceId)->with('sukses', 'Order recorded.');
     }
 
-    private function resolvePromo(int $tenantId, array $data, int $serviceId): ?Promo
-    {
-        if (empty($data['promo_code'])) {
-            return null;
-        }
-
-        $candidate = Promo::where('tenant_id', $tenantId)
-            ->where('code', strtoupper($data['promo_code']))
-            ->first();
-
-        return $candidate && $candidate->isValidFor($serviceId) ? $candidate : null;
-    }
-
     private function resolveCustomer(int $tenantId, array $data): User
     {
         if (! empty($data['user_id'])) {
@@ -128,7 +121,7 @@ class OrderWebController extends Controller
         return User::create([
             'tenant_id' => $tenantId,
             'name' => $data['customer_name'],
-            'email' => 'walkin-'.now()->format('YmdHis').'-'.str()->random(6).'@laundrey.local',
+            'email' => null,
             'password' => Hash::make(str()->random(32)),
             'role' => 'pelanggan',
             'phone' => $phone,

@@ -31,7 +31,7 @@ class AuthWebController extends Controller
             return back()->withErrors(['email' => 'These credentials do not match our records'])->onlyInput('email');
         }
 
-        if (! in_array(Auth::user()->role, ['admin', 'superadmin'], true)) {
+        if (! in_array(Auth::user()->role, ['tenant', 'admin'], true)) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -41,7 +41,7 @@ class AuthWebController extends Controller
 
         $request->session()->regenerate();
 
-        $target = Auth::user()->role === 'superadmin' ? route('admin.dashboard') : route('dashboard');
+        $target = Auth::user()->role === 'admin' ? route('admin.dashboard') : route('dashboard');
 
         return redirect()->intended($target)->with('sukses', 'Signed in. Welcome back.');
     }
@@ -66,7 +66,7 @@ class AuthWebController extends Controller
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
-                'role' => 'admin',
+                'role' => 'tenant',
                 'phone' => $data['phone'] ?? null,
             ]);
         });

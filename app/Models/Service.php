@@ -38,6 +38,11 @@ class Service extends Model
         return $this->belongsToMany(Promo::class, 'promo_service')->withTimestamps();
     }
 
+    public function promoFor(float $qty): ?Promo
+    {
+        return $this->promos->first(fn ($promo) => $promo->isValidFor($this->id, $qty, $this->unit_type));
+    }
+
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);

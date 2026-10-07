@@ -4,7 +4,7 @@
 @section('content')
 <div class="flex flex-wrap items-end justify-between gap-3">
 <div>
-<p class="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">Customer file</p>
+<p class="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">Customer detail</p>
 <h1 class="mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl">Customers.</h1>
 </div>
 <a href="{{ route('customers.create') }}" class="h-10 rounded-md bg-ink px-4 text-sm font-semibold leading-10 text-white hover:bg-black">+ Record customer</a>

@@ -6,11 +6,11 @@
 <div>
 <p class="font-mono text-xs font-bold tracking-wide">{{ $customer->customerCode() }}</p>
 <h1 class="mt-1 font-display text-3xl font-bold tracking-tight">{{ $customer->name }}</h1>
-<p class="mt-1 font-mono text-[13px] text-ink-2">{{ $customer->phone ?? 'no phone' }} · {{ $customer->email }}</p>
+<p class="mt-1 font-mono text-[13px] text-ink-2">{{ $customer->phone ?? 'no phone' }} · {{ $customer->email ?? 'no email' }}</p>
 </div>
 <div class="flex gap-2">
 <a href="{{ route('customers.edit', $customer) }}" class="h-9 rounded-md border border-ink px-3 text-[13px] font-medium leading-8 hover:bg-ink hover:text-white">Edit</a>
-<form method="POST" action="{{ route('customers.destroy', $customer) }}" onsubmit="return confirm('Delete this customer file?')">@csrf @method('DELETE')<button class="h-9 rounded-md px-3 text-[13px] text-muted hover:text-red-600">Delete</button></form>
+<form method="POST" action="{{ route('customers.destroy', $customer) }}" onsubmit="return confirm('Delete this customer?')">@csrf @method('DELETE')<button class="h-9 rounded-md px-3 text-[13px] text-muted hover:text-red-600">Delete</button></form>
 </div>
 </div>
 
@@ -31,7 +31,7 @@
 <span class="w-24 shrink-0 text-right font-mono text-[13px] font-bold tabular-nums">Rp{{ number_format($o->total_price, 0, ',', '.') }}</span>
 </a>
 @empty
-<p class="border-b border-line py-8 text-center text-[13px] text-muted">No loads on file yet.</p>
+<p class="border-b border-line py-8 text-center text-[13px] text-muted">No loads yet.</p>
 @endforelse
 </div>
 <div class="mt-4 text-[13px]">{{ $orders->links() }}</div>

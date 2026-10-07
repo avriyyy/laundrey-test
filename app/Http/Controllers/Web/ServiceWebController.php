@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\Promo;
 use App\Models\Service;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,11 +26,16 @@ class ServiceWebController extends Controller
             'price_per_unit' => ['required', 'numeric', 'min:0'],
             'unit_type' => ['required', 'in:kg,pcs'],
             'estimated_hours' => ['required', 'integer', 'min:1', 'max:720'],
+            'promo_id' => ['nullable', 'integer', 'exists:promos,id'],
         ]);
 
-        Service::create($data + ['tenant_id' => auth()->user()->tenant_id]);
+        $promoIds = $this->scopedPromoIds($data['promo_id'] ?? null);
+        unset($data['promo_id']);
 
-        return back()->with('sukses', 'Service added.');
+        $service = Service::create($data + ['tenant_id' => auth()->user()->tenant_id]);
+        $service->promos()->sync($promoIds);
+
+        return redirect()->route('services.index')->with('sukses', 'Service added.');
     }
 
     public function update(Request $request, int $service): RedirectResponse
@@ -41,11 +47,28 @@ class ServiceWebController extends Controller
             'price_per_unit' => ['sometimes', 'numeric', 'min:0'],
             'unit_type' => ['sometimes', 'in:kg,pcs'],
             'estimated_hours' => ['sometimes', 'integer', 'min:1', 'max:720'],
+            'promo_id' => ['nullable', 'integer', 'exists:promos,id'],
         ]);
 
-        $item->update($data);
+        $promoIds = $this->scopedPromoIds($data['promo_id'] ?? null);
+        unset($data['promo_id']);
 
-        return back()->with('sukses', 'Service updated.');
+        $item->update($data);
+        $item->promos()->sync($promoIds);
+
+        return redirect()->route('services.index')->with('sukses', 'Service updated.');
+    }
+
+    /** @return array<int> */
+    private function scopedPromoIds(mixed $promoId): array
+    {
+        if (empty($promoId)) {
+            return [];
+        }
+
+        $exists = Promo::where('tenant_id', auth()->user()->tenant_id)->whereKey($promoId)->exists();
+
+        return $exists ? [(int) $promoId] : [];
     }
 
     public function destroy(int $service): RedirectResponse
@@ -61,9 +84,11 @@ class ServiceWebController extends Controller
         return back()->with('sukses', 'Service deleted.');
     }
 
-    public function create(): RedirectResponse
+    public function create(): View
     {
-        return redirect()->route('services.index');
+        $promos = Promo::where('tenant_id', auth()->user()->tenant_id)->orderBy('name')->get();
+
+        return view('services.create', compact('promos'));
     }
 
     public function show(int $service): RedirectResponse
@@ -71,8 +96,11 @@ class ServiceWebController extends Controller
         return redirect()->route('services.index');
     }
 
-    public function edit(int $service): RedirectResponse
+    public function edit(int $service): View
     {
-        return redirect()->route('services.index');
+        $service = Service::where('tenant_id', auth()->user()->tenant_id)->with('promos')->findOrFail($service);
+        $promos = Promo::where('tenant_id', auth()->user()->tenant_id)->orderBy('name')->get();
+
+        return view('services.edit', compact('service', 'promos'));
     }
 }

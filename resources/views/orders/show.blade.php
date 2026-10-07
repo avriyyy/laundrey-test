@@ -6,7 +6,7 @@
 <div>
 <p class="font-mono text-xs font-bold tracking-wide">{{ $order->invoice_number }} · {{ $order->customer->customerCode() }}</p>
 <h1 class="mt-1 font-display text-3xl font-bold tracking-tight">{{ $order->customer->name }}</h1>
-<p class="mt-1 text-sm text-ink-2">{{ $order->service->service_name }} · {{ $order->weight_or_qty }} {{ $order->service->unit_type }} · in {{ $order->created_at->format('d M Y H:i') }}@if($order->promo) · <span class="font-mono font-bold">{{ $order->promo->code }} -{{ $order->discount_percent }}%</span>@endif</p>
+<p class="mt-1 text-sm text-ink-2">{{ $order->service->service_name }} · {{ $order->weight_or_qty }} {{ $order->service->unit_type }} · in {{ $order->created_at->format('d M Y H:i') }}@if($order->promo) · <span class="font-mono font-bold">{{ $order->promo->name }} -{{ $order->discount_percent }}%</span>@endif</p>
 </div>
 <div class="flex flex-col items-end gap-1.5"><x-status-badge :status="$order->current_status" /><x-payment-badge :status="$order->payment_status" /></div>
 </div>

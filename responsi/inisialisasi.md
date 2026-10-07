@@ -106,10 +106,12 @@ Merge ke `main` via Pull Request, 1 approve teman. Konflik `composer.lock`: jang
 
 ## 5. Pembagian kerja (detail di file masing-masing)
 
-| File | Anggota | Fokus | CRUD miliknya |
-| ---- | ------- | ----- | ------------- |
-| `01-anggota-1-auth-master.md` | 1 (pika) | Auth Sanctum, tenant, user, service | **Services** |
-| `02-anggota-2-transaksi-tracking.md` | 2 (bahtiar) | Order, track, invoice otomatis | **Orders + OrderTracks** |
-| `03-anggota-3-frontend-deploy.md` | 3 (yudha) | Blade, web controller, deploy | **Customers** |
+| File | Anggota | Fokus vertikal | CRUD miliknya |
+| ---- | ------- | -------------- | ------------- |
+| `anggota-1.md` | 1 (pika) | Fondasi, auth, tenant, platform, layout+tema | **Tenants** (halaman CRUD penuh) |
+| `anggota-2.md` | 2 (bahtiar) | Services, orders, tracking, struk | **Services, Orders** (API + halaman CRUD penuh) |
+| `anggota-3.md` | 3 (yudha, porsi lebih) | Customers, promos, landing, docs, deploy | **Customers, Promos** (API + halaman CRUD penuh) |
 
-Urutan kerjakan: **Anggota 1 dulu** (fondasi), lalu 2 dan 3 paralel. Tiap file di bawah berisi: langkah berurutan, path file, kode lengkap, fungsi singkat, dan saran commit/push.
+Aturan: tiap anggota memegang minimal 1 fitur CRUD end-to-end (backend API + halaman frontend). Pembagian di atas memenuhi: pika=Tenants, bahtiar=Services+Orders, yudha=Customers+Promos.
+
+Urutan kerjakan: **pika dulu** (fondasi), lalu `bahtiar`, lalu `yudha` (butuh API + halaman inti). Tiap file berisi langkah, path, kode, fungsi, dan saran commit/push. Tiap file di bawah berisi: langkah berurutan, path file, kode lengkap, fungsi singkat, dan saran commit/push.

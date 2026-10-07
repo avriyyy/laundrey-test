@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePromoRequest;
 use App\Http\Resources\PromoResource;
 use App\Models\Promo;
-use App\Models\Service;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,13 +16,10 @@ class PromoController extends Controller
         $kueri = Promo::query()->with('services')->where('tenant_id', $request->user()->tenant_id);
 
         if ($request->filled('cari')) {
-            $kueri->where(function ($sub) {
-                $sub->where('code', 'like', '%'.$request->query('cari').'%')
-                    ->orWhere('name', 'like', '%'.$request->query('cari').'%');
-            });
+            $kueri->where('name', 'like', '%'.$request->query('cari').'%');
         }
 
-        $kueri->orderBy('code');
+        $kueri->orderBy('name');
 
         $perHalaman = min($request->integer('per_halaman', 10), 100);
 
@@ -35,18 +31,7 @@ class PromoController extends Controller
         $tenantId = $request->user()->tenant_id;
         $data = $request->validated();
 
-        $exists = Promo::where('tenant_id', $tenantId)->where('code', $data['code'])->exists();
-
-        if ($exists) {
-            return response()->json(['sukses' => false, 'pesan' => 'Promo code already used'], 422);
-        }
-
-        $serviceIds = Service::where('tenant_id', $tenantId)
-            ->whereIn('id', $data['service_ids'] ?? [])
-            ->pluck('id');
-
         $promo = Promo::create($data + ['tenant_id' => $tenantId]);
-        $promo->services()->sync($serviceIds);
         $promo->load('services');
 
         return response()->json([

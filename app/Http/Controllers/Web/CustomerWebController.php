@@ -78,7 +78,7 @@ class CustomerWebController extends Controller
             'tenant_id' => auth()->user()->tenant_id,
             'name' => $data['name'],
             'phone' => $data['phone'] ?? null,
-            'email' => $data['email'] ?? 'walkin-'.now()->format('YmdHis').'-'.str()->random(6).'@laundrey.local',
+            'email' => $data['email'] ?? null,
             'password' => Hash::make(str()->random(32)),
             'role' => 'pelanggan',
         ]);
