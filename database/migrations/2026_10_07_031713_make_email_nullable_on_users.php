@@ -14,6 +14,8 @@ return new class extends Migration
             DB::statement('DROP TABLE users');
             DB::statement('ALTER TABLE users_new RENAME TO users');
             DB::statement('PRAGMA foreign_keys = ON');
+        } elseif (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE users ALTER COLUMN email DROP NOT NULL');
         } else {
             DB::statement('ALTER TABLE users MODIFY email VARCHAR(100) NULL');
         }
@@ -28,6 +30,9 @@ return new class extends Migration
             DB::statement('DROP TABLE users');
             DB::statement('ALTER TABLE users_new RENAME TO users');
             DB::statement('PRAGMA foreign_keys = ON');
+        } elseif (DB::getDriverName() === 'pgsql') {
+            DB::statement("UPDATE users SET email = 'restored-' || id || '@laundrey.local' WHERE email IS NULL");
+            DB::statement('ALTER TABLE users ALTER COLUMN email SET NOT NULL');
         } else {
             DB::statement('ALTER TABLE users MODIFY email VARCHAR(100) NOT NULL');
         }
