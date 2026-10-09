@@ -106,11 +106,12 @@ class="h-12 flex-1 rounded-md border border-line-strong bg-white px-4 font-mono 
 <div class="mt-16 border border-ink bg-white px-6 py-8 text-center md:px-10 md:py-10">
 <div class="mx-auto max-w-xl">
 <div>
-<h2 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Something wrong?</h2>
-<p class="mt-2 text-sm leading-relaxed text-ink-2">Wrong status, missing load, or a billing question - report it straight to our email.</p>
+<h2 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Run a laundry?</h2>
+<p class="mt-2 text-sm leading-relaxed text-ink-2">Register your shop to record orders, track stages, and print receipts - or log in to your dashboard.</p>
 </div>
 <div class="mt-6 flex justify-center gap-2">
-<a href="mailto:help@laundrey.test?subject=Problem%20report&body=Hello%20Laundrey%2C%20I%20want%20to%20report%20a%20problem%3A%20" class="h-11 rounded-md bg-ink px-6 text-sm font-semibold leading-10 text-white hover:bg-black">Report via Email</a>
+<a href="{{ route('register') }}" class="h-11 rounded-md bg-ink px-6 text-sm font-semibold leading-10 text-white hover:bg-black">Daftar</a>
+<a href="{{ route('login') }}" class="h-11 rounded-md border border-ink px-6 text-sm font-medium leading-10 hover:bg-ink hover:text-white">Login</a>
 </div>
 </div>
 </div>
